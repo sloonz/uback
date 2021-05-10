@@ -1,0 +1,32 @@
+project_name: uback
+
+builds:
+  - id: uback
+    ldflags:
+      - -s -w -X github.com/sloonz/uback/cmd.version={{.Tag}} -X github.com/sloonz/uback/cmd.commit={{.ShortCommit}} -X github.com/sloonz/uback/cmd.buildDate={{.Date}}
+    binary: uback
+    goarch:
+      - amd64
+    goos:
+      - linux
+
+archives:
+  - id: uback
+    builds:
+      - uback
+    replacements:
+      amd64: x86-64
+    files:
+      - LICENSE
+      - README.md
+      - doc
+source:
+  enabled: true
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - ci skip
+      - Merge pull request
+      - Merge branch

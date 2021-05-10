@@ -1,0 +1,17 @@
+linters:
+  enable:
+    - govet
+    - gofmt
+    - gosec
+    - golint
+run:
+  skip-files:
+    - "secretstream/secretstream.go" 
+    - "secretstream/secretstream_test.go" 
+linters-settings:
+  errcheck:
+    exclude: .errcheck-exclude.cfg
+  gosec:
+    excludes:
+      - G204
+      - G306

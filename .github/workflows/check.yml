@@ -1,0 +1,22 @@
+name: CI
+on: [push]
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '^1.16.0'
+      - run: make lint
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '^1.16.0'
+      - run: sudo npm install -g bats
+      - run: make SKIP_MARIADB_TESTS=1 test
