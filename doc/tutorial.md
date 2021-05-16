@@ -30,7 +30,7 @@ $ echo hello > /tmp/etc/a
 We can now create our encrypted backup :
 
 ```
-$ uback backup type=tar,path=/etc,key-file=backup.pub type=fs,path=/tmp/my-backups/etc/
+$ uback backup type=tar,path=/tmp/etc,key-file=backup.pub type=fs,path=/tmp/my-backups/etc/
 WARN[0000] SnapshotsPath option missing, incremental backups will not impossible  source=tar
 WARN[0000] StateFile option missing, full backup forced 
 INFO[0000] creating backup: 20210515T124130.706-full.ubkp  source=tar
@@ -44,7 +44,7 @@ WARN[0000] no retention policies set for destination, keeping everything
 The three warnings will be addressed in the next sections.
 
 Most options here are pretty much self-explanatory. But to state the
-obvious, `path=/etc` specifies what we’re backing up, `type=tar` how we
+obvious, `path=/tmp/etc` specifies what we’re backing up, `type=tar` how we
 bundle it, `key-file` is the public key use for encrypting the backup,
 `path=/tmp/my-backups/etc` is the location of the backups, and `type=fs`
 means that we’re just storing the backups as plain files on the local
