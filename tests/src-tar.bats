@@ -55,4 +55,6 @@ TEST_TMPDIR="$BATS_RUN_TMPDIR/src-tar"
 	assert_equal "$(cat "$TEST_TMPDIR"/restore/a)" "av2"
 	[ ! -e "$TEST_TMPDIR"/restore/b" ]
 	rm -rf "$TEST_TMPDIR"/restore/*
+
+	assert_equal "$(ls "$TEST_TMPDIR/snapshots" | wc -l)" 1
 }
