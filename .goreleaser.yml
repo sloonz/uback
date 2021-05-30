@@ -12,6 +12,7 @@ builds:
 
 archives:
   - id: uback
+    wrap_in_directory: true
     builds:
       - uback
     replacements:
@@ -27,6 +28,7 @@ changelog:
   sort: asc
   filters:
     exclude:
+      - chlg skip
       - ci skip
       - Merge pull request
       - Merge branch
