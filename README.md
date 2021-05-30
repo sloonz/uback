@@ -30,8 +30,8 @@ source allow it) and retention policy.
 All the documentation is in the [doc/](doc/) directory. You should start
 by the [tutorial](doc/tutorial.md) and then jump to advanced topics ([file
 format](doc/file-format.md), [custom sources](doc/custom-sources.md),
-TODO: custom destinations) or the documentation specific to each source
-or destination.
+[custom destinations](doc/custom-destinations.md)) or the documentation
+specific to each source or destination.
 
 ## Supported Sources
 
@@ -50,7 +50,7 @@ storage
 `uback` is in a preliminary stage, quite lacking feature-wide, but fairly
 stable with a good test suite. Here is a rough sketch of the roadmap :
 
-### 0.1 (released)
+### 0.1
 
 * [x] Core features:
   * [x] Backups & Incremental Backups
@@ -63,14 +63,16 @@ stable with a good test suite. Here is a rough sketch of the roadmap :
 * [x] Documentation
 * [x] CI/Release Management
 
-### 0.2 (next)
+### 0.2 (released)
 
 * [x] Custom sources
-* [ ] Custom destinations
+* [x] Custom destinations
 
-### 0.3
+### 0.3 (next)
 
-* [ ] Proxy support
+* [ ] switch to [age](https://age-encryption.org/) for encryption. This
+will be the first (and hopefully the last) breaking change for the file
+format and keys format.
 
 ### 0.4
 
@@ -78,6 +80,10 @@ stable with a good test suite. Here is a rough sketch of the roadmap :
 * [ ] `btrfs` destintation
 
 ### 0.5
+
+* [ ] Proxy support
+
+### 0.6
 
 * [ ] remove mariabackup footguns
   * [ ] add the option to use a dockerized mariabackup in the restoration

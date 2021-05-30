@@ -1,0 +1,36 @@
+#!/bin/bash
+
+set -e
+
+if [ "$1" != "destination" ] ; then
+  echo "Invalid kind" >&2
+  exit 1
+fi
+
+case "$2" in
+  validate-options)
+    if [ "$UBACK_OPT_PATH" = "" ] ; then
+      echo "Missing option: Path" >&2
+      exit 1
+    fi
+    mkdir -p -- "$UBACK_OPT_PATH"
+    ;;
+  list-backups)
+    ls -- "$UBACK_OPT_PATH"
+    ;;
+  remove-backup)
+    rm -f -- "$UBACK_OPT_PATH/$3.ubkp"
+    ;;
+  send-backup)
+    cat > "$UBACK_OPT_PATH/_tmp-$3.ubkp"
+    mv "$UBACK_OPT_PATH/_tmp-$3.ubkp" "$UBACK_OPT_PATH/$3.ubkp"
+    ;;
+  receive-backup)
+    cat "$UBACK_OPT_PATH/$3.ubkp"
+    ;;
+  *)
+    echo "Invalid operation: $2" >&2
+    exit 1
+esac
+
+exit 0
