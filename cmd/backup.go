@@ -97,7 +97,7 @@ var (
 					}
 
 					if time.Now().UTC().Sub(t).Seconds() >= float64(fullInterval)*0.9 {
-						logrus.Printf("interval between full backups reachead, full backup forced")
+						logrus.Printf("interval between full backups reached, full backup forced")
 						forceFull = true
 					}
 				}
