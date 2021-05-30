@@ -1,0 +1,71 @@
+#!/bin/bash
+
+set -e
+
+read_json_array() {
+	local input="$1"
+	local -n result=$2
+	result=()
+	if [ "$input" != "" ] ; then
+		while read item; do
+			result+=("$item")
+		done <<<"$(<<<"$input" jq -r '.[]')"
+	fi
+}
+
+if [ "$1" != "source" ] ; then
+  echo "Invalid kind" >&2
+  exit 1
+fi
+
+case "$2" in
+  type)
+    echo "command:uback-tar-src"
+    if [ "$UBACK_OPT_SNAPSHOTS_PATH" = "" ] ; then
+      echo "Missing option: SnapshotsPath" >&2
+      exit 1
+    fi
+    if [ "$UBACK_OPT_PATH" = "" ] ; then
+      echo "Missing option: Path" >&2
+      exit 1
+    fi
+    ;;
+  list-snapshots)
+    mkdir -p -- "$UBACK_OPT_SNAPSHOTS_PATH"
+    ls -- "$UBACK_OPT_SNAPSHOTS_PATH"
+    ;;
+  remove-snapshot)
+    mkdir -p -- "$UBACK_OPT_SNAPSHOTS_PATH"
+    rm -f -- "$UBACK_OPT_SNAPSHOTS_PATH/$3"
+    ;;
+  create-backup)
+    ns=$(date -u +%N)
+    snapshot=$(date -u +%Y%m%dT%H%M%S.)${ns:0:3}
+    mkdir -p -- "$UBACK_OPT_SNAPSHOTS_PATH"
+    if [ "$3" != "" ] && [ -f "$UBACK_OPT_SNAPSHOTS_PATH/$3" ] ; then
+      echo "${snapshot}-from-$3"
+      cp -a -- "$UBACK_OPT_SNAPSHOTS_PATH/$3" "$UBACK_OPT_SNAPSHOTS_PATH/_tmp-${snapshot}"
+    else
+      echo "${snapshot}-full"
+    fi
+    read_json_array "$UBACK_SOPT_EXTRA_ARGS" extra_args
+    tar --create -C "$UBACK_OPT_PATH" --listed-incremental="$UBACK_OPT_SNAPSHOTS_PATH/_tmp-${snapshot}" "${extra_args[@]}" .
+    mv -- "$UBACK_OPT_SNAPSHOTS_PATH/_tmp-${snapshot}" "$UBACK_OPT_SNAPSHOTS_PATH/${snapshot}"
+    ;;
+  restore-backup)
+    target="$3"
+    snapshot="$4"
+    base="$5"
+    if [ "$base" != "" ] ; then
+      mv -- "$target/$base" "$target/$snapshot"
+    else
+      mkdir -p -- "$target/$snapshot"
+    fi
+    tar -x -C "$target/$snapshot"
+    ;;
+  *)
+    echo "Invalid operation: $2" >&2
+    exit 1
+esac
+
+exit 0

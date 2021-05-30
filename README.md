@@ -27,10 +27,11 @@ source allow it) and retention policy.
 
 ## Quickstart and Documentation
 
-All the documentation is in the [doc/](doc/) directory. You should
-start by the [tutorial](doc/tutorial.md) and then jump to advanced
-topics ([file format](doc/file-format.md), TODO: custom sources, custom
-destinations) or the documentation specific to each source or destination.
+All the documentation is in the [doc/](doc/) directory. You should start
+by the [tutorial](doc/tutorial.md) and then jump to advanced topics ([file
+format](doc/file-format.md), [custom sources](doc/custom-sources.md),
+TODO: custom destinations) or the documentation specific to each source
+or destination.
 
 ## Supported Sources
 
@@ -64,7 +65,7 @@ stable with a good test suite. Here is a rough sketch of the roadmap :
 
 ### 0.2 (next)
 
-* [ ] Custom sources
+* [x] Custom sources
 * [ ] Custom destinations
 
 ### 0.3

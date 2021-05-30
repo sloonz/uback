@@ -50,7 +50,7 @@ func (d *fsDestination) ListBackups() ([]uback.Backup, error) {
 			continue
 		}
 
-		backup, err := uback.ParseBackupFilename(entry.Name())
+		backup, err := uback.ParseBackupFilename(entry.Name(), true)
 		if err != nil {
 			fsLog.WithFields(logrus.Fields{
 				"file": entry.Name(),

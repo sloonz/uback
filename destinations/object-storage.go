@@ -103,7 +103,7 @@ func (d *objectStorageDestination) ListBackups() ([]uback.Backup, error) {
 			continue
 		}
 
-		backup, err := uback.ParseBackupFilename(path.Base(obj.Key))
+		backup, err := uback.ParseBackupFilename(path.Base(obj.Key), true)
 		if err != nil {
 			osLog.WithFields(logrus.Fields{
 				"key": obj.Key,

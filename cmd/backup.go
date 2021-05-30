@@ -112,7 +112,7 @@ var (
 			}
 
 			pr, pw := io.Pipe()
-			cw, err := container.NewWriter(pw, &srcOpts.PublicKey, srcOpts.Options.String["Type"], compressionLevel)
+			cw, err := container.NewWriter(pw, &srcOpts.PublicKey, srcOpts.SourceType, compressionLevel)
 			if err != nil {
 				logrus.Fatal(err)
 			}

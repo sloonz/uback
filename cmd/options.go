@@ -16,6 +16,7 @@ import (
 type optionsBuilder struct {
 	Options           *uback.Options
 	Source            uback.Source
+	SourceType        string
 	Destination       uback.Destination
 	RetentionPolicies []uback.RetentionPolicy
 	PrivateKey        x25519.PrivateKey
@@ -29,7 +30,7 @@ func newOptionsBuilder(options *uback.Options, err error) *optionsBuilder {
 
 func (o *optionsBuilder) WithSource() *optionsBuilder {
 	if o.Error == nil {
-		o.Source, o.Error = sources.New(o.Options)
+		o.Source, o.SourceType, o.Error = sources.New(o.Options)
 	}
 	return o
 }

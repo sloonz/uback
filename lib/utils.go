@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	backupFilenameRe   = regexp.MustCompile(fmt.Sprintf(`^(%s)-(full|from-(%s))\.ubkp$`, SnapshotRe, SnapshotRe))
+	backupFilenameRe   = regexp.MustCompile(fmt.Sprintf(`^(%s)-(full|from-(%s))(\.ubkp)?$`, SnapshotRe, SnapshotRe))
 	SnapshotRe         = `\d{8}T\d{6}\.\d{3}`  // Regexp matching a snapshot name
 	SnapshotTimeFormat = "20060102T150405.000" // Time format of a snapshot, for time.Parse / time.Format
 )
@@ -102,11 +102,15 @@ func SortedListSnapshots(src Source) ([]Snapshot, error) {
 }
 
 // Reverse of Backup.Filename()
-func ParseBackupFilename(f string) (Backup, error) {
+func ParseBackupFilename(f string, requireExt bool) (Backup, error) {
 	f = path.Base(f)
 	m := backupFilenameRe.FindStringSubmatch(f)
 	if m == nil {
 		return Backup{}, fmt.Errorf("cannot parse backup filename: %s", f)
+	}
+
+	if requireExt && m[4] != ".ubkp" {
+		return Backup{}, fmt.Errorf("cannot parse backup filename: %s: missing or invalid extension '%s'", f, m[4])
 	}
 
 	if m[2] == "full" {
@@ -158,7 +162,11 @@ func WrapSourceCommand(backup Backup, cmd *exec.Cmd, finalize func(err error) er
 	}
 
 	go func() {
-		pw.CloseWithError(finalize(cmd.Wait()))
+		if finalize == nil {
+			pw.CloseWithError(cmd.Wait())
+		} else {
+			pw.CloseWithError(finalize(cmd.Wait()))
+		}
 	}()
 
 	return backup, pr, nil
