@@ -30,5 +30,8 @@ changelog:
     exclude:
       - chlg skip
       - ci skip
+      - typo
       - Merge pull request
       - Merge branch
+      - "test:"
+      - "build:"
