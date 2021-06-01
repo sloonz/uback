@@ -196,3 +196,10 @@ func GetFullChain(backups []Backup, backup Backup, index map[string]Backup) ([]B
 	}
 	return chain, ok
 }
+
+func BuildCommand(command []string, additionalArgs ...string) *exec.Cmd {
+	fullArgs := make([]string, 0, len(command)+len(additionalArgs)-1)
+	fullArgs = append(fullArgs, command[1:]...)
+	fullArgs = append(fullArgs, additionalArgs...)
+	return exec.Command(command[0], fullArgs...)
+}

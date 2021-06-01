@@ -7,11 +7,11 @@ of the user.
 ## Custom Sources for Users
 
 When creating a backup, you give `command` as the source type, and set
-the `Command` option to the custom source command. It can be either a
+the `@Command` option to the custom source command. It can be either a
 full path or relative path if the custom source command in in the PATH.
 
 ```shell
-$ uback backup type=command,@source-command=uback-tar-src,path=/etc,snapshots-path=/var/lib/uback/custom-tar-snapshots/ $DEST_OPTIONS
+$ uback backup type=command,command=uback-tar-src,path=/etc,snapshots-path=/var/lib/uback/custom-tar-snapshots/ $DEST_OPTIONS
 ```
 
 When restoring a backup, on the other hand, the custom command MUST be

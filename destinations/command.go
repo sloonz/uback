@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/exec"
 	"strings"
 
 	"github.com/gobuffalo/flect"
@@ -25,13 +24,13 @@ var (
 
 type commandDestination struct {
 	options *uback.Options
-	command string
+	command []string
 	env     []string
 }
 
 func newCommandDestination(options *uback.Options) (uback.Destination, error) {
-	command := options.String["Command"]
-	if command == "" {
+	command := options.GetCommand("Command", nil)
+	if len(command) == 0 {
 		return nil, ErrCommandMissing
 	}
 
@@ -48,7 +47,7 @@ func newCommandDestination(options *uback.Options) (uback.Destination, error) {
 	}
 
 	buf := bytes.NewBuffer(nil)
-	cmd := exec.Command(command, "destination", "validate-options")
+	cmd := uback.BuildCommand(command, "destination", "validate-options")
 	cmd.Stdout = buf
 	cmd.Stderr = os.Stderr
 	cmd.Env = env
@@ -64,7 +63,7 @@ func (d *commandDestination) ListBackups() ([]uback.Backup, error) {
 	var res []uback.Backup
 
 	buf := bytes.NewBuffer(nil)
-	cmd := exec.Command(d.command, "destination", "list-backups")
+	cmd := uback.BuildCommand(d.command, "destination", "list-backups")
 	cmd.Stdout = buf
 	cmd.Stderr = os.Stderr
 	cmd.Env = d.env
@@ -106,7 +105,7 @@ func (d *commandDestination) ListBackups() ([]uback.Backup, error) {
 }
 
 func (d *commandDestination) RemoveBackup(backup uback.Backup) error {
-	cmd := exec.Command(d.command, "destination", "remove-backup", backup.FullName())
+	cmd := uback.BuildCommand(d.command, "destination", "remove-backup", backup.FullName())
 	cmd.Stdout = os.Stderr
 	cmd.Stderr = os.Stderr
 	cmd.Env = d.env
@@ -114,7 +113,7 @@ func (d *commandDestination) RemoveBackup(backup uback.Backup) error {
 }
 
 func (d *commandDestination) SendBackup(backup uback.Backup, data io.Reader) error {
-	cmd := exec.Command(d.command, "destination", "send-backup", backup.FullName())
+	cmd := uback.BuildCommand(d.command, "destination", "send-backup", backup.FullName())
 	cmd.Stdin = data
 	cmd.Stdout = os.Stderr
 	cmd.Stderr = os.Stderr
@@ -124,7 +123,7 @@ func (d *commandDestination) SendBackup(backup uback.Backup, data io.Reader) err
 
 func (d *commandDestination) ReceiveBackup(backup uback.Backup) (io.ReadCloser, error) {
 	pr, pw := io.Pipe()
-	cmd := exec.Command(d.command, "destination", "receive-backup", backup.FullName())
+	cmd := uback.BuildCommand(d.command, "destination", "receive-backup", backup.FullName())
 	cmd.Stdout = pw
 	cmd.Stderr = os.Stderr
 	cmd.Env = d.env

@@ -7,12 +7,12 @@ control of the user.
 ## Custom Destinations for Users
 
 When creating a backup, you give `command` as the destination type,
-and set the `Command` option to the custom source command. It can be
+and set the `@Command` option to the custom source command. It can be
 either a full path or relative path if the custom destination command
 in in the PATH.
 
 ```shell
-$ uback backup $SOURCE_OPTIONS id=test,type=custom,command=uback-fs-dest
+$ uback backup $SOURCE_OPTIONS id=test,type=command,command=uback-fs-dest
 ```
 
 ## Custom Destinations for Implementors

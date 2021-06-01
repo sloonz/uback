@@ -27,13 +27,13 @@ var (
 
 type commandSource struct {
 	options *uback.Options
-	command string
+	command []string
 	env     []string
 }
 
 func newCommandSource(options *uback.Options) (uback.Source, string, error) {
-	command := options.String["Command"]
-	if command == "" {
+	command := options.GetCommand("Command", nil)
+	if len(command) == 0 {
 		return nil, "", ErrCommandMissing
 	}
 
@@ -50,7 +50,7 @@ func newCommandSource(options *uback.Options) (uback.Source, string, error) {
 	}
 
 	buf := bytes.NewBuffer(nil)
-	cmd := exec.Command(command, "source", "type")
+	cmd := uback.BuildCommand(command, "source", "type")
 	cmd.Stdout = buf
 	cmd.Stderr = os.Stderr
 	cmd.Env = env
@@ -72,14 +72,14 @@ func newCommandSource(options *uback.Options) (uback.Source, string, error) {
 	return &commandSource{options: options, command: command, env: env}, typ, nil
 }
 
-func newCommandSourceForRestoration(command string) (uback.Source, error) {
+func newCommandSourceForRestoration(command []string) (uback.Source, error) {
 	return &commandSource{command: command}, nil
 }
 
 // Part of uback.Source interface
 func (s *commandSource) ListSnapshots() ([]uback.Snapshot, error) {
 	buf := bytes.NewBuffer(nil)
-	cmd := exec.Command(s.command, "source", "list-snapshots")
+	cmd := uback.BuildCommand(s.command, "source", "list-snapshots")
 	cmd.Stdout = buf
 	cmd.Stderr = os.Stderr
 	cmd.Env = s.env
@@ -121,7 +121,7 @@ func (s *commandSource) ListSnapshots() ([]uback.Snapshot, error) {
 
 // Part of uback.Source interface
 func (s *commandSource) RemoveSnapshot(snapshot uback.Snapshot) error {
-	cmd := exec.Command(s.command, "source", "remove-snapshot", snapshot.Name())
+	cmd := uback.BuildCommand(s.command, "source", "remove-snapshot", snapshot.Name())
 	cmd.Stdout = os.Stderr
 	cmd.Stderr = os.Stderr
 	cmd.Env = s.env
@@ -132,9 +132,9 @@ func (s *commandSource) RemoveSnapshot(snapshot uback.Snapshot) error {
 func (s *commandSource) CreateBackup(baseSnapshot *uback.Snapshot) (uback.Backup, io.ReadCloser, error) {
 	var cmd *exec.Cmd
 	if baseSnapshot != nil {
-		cmd = exec.Command(s.command, "source", "create-backup", baseSnapshot.Name())
+		cmd = uback.BuildCommand(s.command, "source", "create-backup", baseSnapshot.Name())
 	} else {
-		cmd = exec.Command(s.command, "source", "create-backup")
+		cmd = uback.BuildCommand(s.command, "source", "create-backup")
 	}
 
 	commandLog.Printf("running: %v", cmd.String())
@@ -173,9 +173,9 @@ func (s *commandSource) CreateBackup(baseSnapshot *uback.Snapshot) (uback.Backup
 func (s *commandSource) RestoreBackup(targetDir string, backup uback.Backup, data io.Reader) error {
 	var cmd *exec.Cmd
 	if backup.BaseSnapshot != nil {
-		cmd = exec.Command(s.command, "source", "restore-backup", targetDir, backup.Snapshot.Name(), backup.BaseSnapshot.Name())
+		cmd = uback.BuildCommand(s.command, "source", "restore-backup", targetDir, backup.Snapshot.Name(), backup.BaseSnapshot.Name())
 	} else {
-		cmd = exec.Command(s.command, "source", "restore-backup", targetDir, backup.Snapshot.Name())
+		cmd = uback.BuildCommand(s.command, "source", "restore-backup", targetDir, backup.Snapshot.Name())
 	}
 
 	commandLog.Printf("running: %v", cmd.String())

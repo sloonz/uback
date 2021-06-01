@@ -5,6 +5,8 @@ import (
 
 	"fmt"
 	"strings"
+
+	"github.com/google/shlex"
 )
 
 // Create a new source from options ; you should be able to call everything on the returned interface
@@ -32,7 +34,11 @@ func NewForRestoration(typ string) (uback.Source, error) {
 		return newMariaBackupSourceForRestoration()
 	default:
 		if strings.HasPrefix(typ, "command:") {
-			return newCommandSourceForRestoration(typ[len("command:"):])
+			command, err := shlex.Split(typ[len("command:"):])
+			if err != nil {
+				return nil, err
+			}
+			return newCommandSourceForRestoration(command)
 		}
 		return nil, fmt.Errorf("invalid source type %v", typ)
 	}
