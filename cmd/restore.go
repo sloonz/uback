@@ -4,18 +4,18 @@ import (
 	"github.com/sloonz/uback/container"
 	"github.com/sloonz/uback/lib"
 	"github.com/sloonz/uback/sources"
-	"github.com/sloonz/uback/x25519"
 
 	"io"
 	"os"
 	"path"
 	"strings"
 
+	"filippo.io/age"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
-func restore(dst uback.Destination, b uback.Backup, sk x25519.PrivateKey, targetDir string) error {
+func restore(dst uback.Destination, b uback.Backup, sk age.Identity, targetDir string) error {
 	logrus.Printf("restoring %v onto %v", b.Filename(), targetDir)
 
 	var data io.ReadCloser
@@ -35,7 +35,7 @@ func restore(dst uback.Destination, b uback.Backup, sk x25519.PrivateKey, target
 	}
 	defer r.Close()
 
-	src, err := sources.NewForRestoration(r.Header.Type)
+	src, err := sources.NewForRestoration(r.Options.String["Type"])
 	if err != nil {
 		return err
 	}

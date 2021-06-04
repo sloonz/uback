@@ -68,13 +68,13 @@ stable with a good test suite. Here is a rough sketch of the roadmap :
 * [x] Custom sources
 * [x] Custom destinations
 
-### 0.3 (next)
+### 0.3 (released)
 
-* [ ] switch to [age](https://age-encryption.org/) for encryption. This
+* [x] switch to [age](https://age-encryption.org/) for encryption. This
 will be the first (and hopefully the last) breaking change for the file
 format and keys format.
 
-### 0.4
+### 0.4 (next)
 
 * [ ] `btrfs` source
 * [ ] `btrfs` destintation

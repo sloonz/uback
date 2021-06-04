@@ -17,8 +17,8 @@ the backups. You can recreate it from the private key if you lose it ;
 it cannot be used for decrypting your backups, so it is not important
 to keep it secret.
 
-They are standard X25519 keys ; you can use other tools like `openssl`
-to generate/manage them.
+They are standard [age](https://age-encryption.org/) keys ; you can use
+`age-keygen` to generate/manage them.
 
 Then, let’s create stuff we want to backup :
 

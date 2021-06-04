@@ -2,9 +2,8 @@ package cmd
 
 import (
 	"github.com/sloonz/uback/container"
-	"github.com/sloonz/uback/x25519"
+	"github.com/sloonz/uback/lib"
 
-	"encoding/pem"
 	"fmt"
 	"io"
 	"os"
@@ -35,41 +34,7 @@ var cmdContainerType = &cobra.Command{
 			logrus.Fatal(err)
 		}
 
-		fmt.Printf("%s\n", r.Header.Type)
-	},
-}
-
-var cmdContainerPublicKey = &cobra.Command{
-	Use:   "pkey [file]",
-	Args:  cobra.ExactArgs(1),
-	Short: "Prints the public key used to encrypt a backup file (if omitted: stdin)",
-	Run: func(cmd *cobra.Command, args []string) {
-		var err error
-		var f io.ReadCloser
-		if len(args) == 0 {
-			f = io.NopCloser(os.Stdin)
-		} else {
-			f, err = os.Open(args[0])
-			if err != nil {
-				logrus.Fatal(err)
-			}
-			defer f.Close()
-		}
-
-		r, err := container.NewReader(f)
-		if err != nil {
-			logrus.Fatal(err)
-		}
-
-		der, err := r.Header.PublicKey.Marshal()
-		if err != nil {
-			logrus.Fatal(err)
-		}
-
-		fmt.Printf("%s\n", pem.EncodeToMemory(&pem.Block{
-			Type:  "PUBLIC KEY",
-			Bytes: der,
-		}))
+		fmt.Printf("%s\n", r.Options.String["Type"])
 	},
 }
 
@@ -108,7 +73,7 @@ var cmdContainerExtract = &cobra.Command{
 			logrus.Fatal(err)
 		}
 
-		sk, err := x25519.LoadPrivateKey(cmdContainerExtractKeyFile, cmdContainerExtractKey)
+		sk, err := uback.LoadPrivateKey(cmdContainerExtractKeyFile, cmdContainerExtractKey)
 		if err != nil {
 			logrus.Fatal(err)
 		}
@@ -158,12 +123,12 @@ var cmdContainerCreate = &cobra.Command{
 			defer out.Close()
 		}
 
-		pk, err := x25519.LoadPublicKey(cmdContainerCreateKeyFile, cmdContainerCreateKey)
+		pk, err := uback.LoadPublicKey(cmdContainerCreateKeyFile, cmdContainerCreateKey)
 		if err != nil {
 			logrus.Fatal(err)
 		}
 
-		w, err := container.NewWriter(out, &pk, typ, cmdContainerCreateCompressionLevel)
+		w, err := container.NewWriter(out, pk, typ, cmdContainerCreateCompressionLevel)
 		if err != nil {
 			logrus.Fatal(err)
 		}
@@ -186,10 +151,10 @@ var cmdContainer = &cobra.Command{
 }
 
 func init() {
-	cmdContainer.AddCommand(cmdContainerType, cmdContainerPublicKey, cmdContainerExtract, cmdContainerCreate)
-	cmdContainerExtract.Flags().StringVarP(&cmdContainerExtractKeyFile, "key-file", "k", "", "private key file for decryption (PEM)")
-	cmdContainerExtract.Flags().StringVarP(&cmdContainerExtractKey, "key", "K", "", "private key for decryption (base-64 encoder DER, aka the base64 content of the PEM)")
-	cmdContainerCreate.Flags().StringVarP(&cmdContainerCreateKeyFile, "key-file", "k", "", "public key file for encryption (PEM)")
-	cmdContainerCreate.Flags().StringVarP(&cmdContainerCreateKey, "key", "K", "", "public key for encryption (base-64 encoder DER, aka the base64 content of the PEM)")
+	cmdContainer.AddCommand(cmdContainerType, cmdContainerExtract, cmdContainerCreate)
+	cmdContainerExtract.Flags().StringVarP(&cmdContainerExtractKeyFile, "key-file", "k", "", "private key file for decryption")
+	cmdContainerExtract.Flags().StringVarP(&cmdContainerExtractKey, "key", "K", "", "private key for decryption")
+	cmdContainerCreate.Flags().StringVarP(&cmdContainerCreateKeyFile, "key-file", "k", "", "public key file for encryption")
+	cmdContainerCreate.Flags().StringVarP(&cmdContainerCreateKey, "key", "K", "", "public key for encryption")
 	cmdContainerCreate.Flags().IntVarP(&cmdContainerCreateCompressionLevel, "compression-level", "z", 3, "compression level")
 }

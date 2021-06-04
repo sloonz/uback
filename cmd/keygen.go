@@ -1,14 +1,14 @@
 package cmd
 
 import (
-	"github.com/sloonz/uback/x25519"
-
-	"encoding/pem"
+	"bytes"
 	"fmt"
 	"io"
 	"os"
+	"reflect"
 	"strings"
 
+	"filippo.io/age"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -23,46 +23,26 @@ on standard output. If only one argument is given, write the private
 key in a file given by the first argument. If both arguments are given,
 write the private key in a file given by the first argument and the
 public key in a file given by the second argument.
-	`),
+       `),
 	Run: func(cmd *cobra.Command, args []string) {
-		pubKey, privKey, err := x25519.GenerateKey()
+		id, err := age.GenerateX25519Identity()
 		if err != nil {
 			logrus.Fatal(err)
 		}
 
-		pubKeyDer, err := pubKey.Marshal()
-		if err != nil {
-			logrus.Fatal(err)
-		}
-
-		privKeyDer, err := privKey.Marshal()
-		if err != nil {
-			logrus.Fatal(err)
-		}
-
-		pubKeyPem := pem.EncodeToMemory(&pem.Block{
-			Type:  "PUBLIC KEY",
-			Bytes: pubKeyDer,
-		})
-
-		privKeyPem := pem.EncodeToMemory(&pem.Block{
-			Type:  "PRIVATE KEY",
-			Bytes: privKeyDer,
-		})
-
-		if len(args) == 0 {
-			fmt.Print(string(privKeyPem))
-		} else {
-			err := os.WriteFile(args[0], privKeyPem, 0600)
+		if len(args) > 0 {
+			err = os.WriteFile(args[0], []byte(fmt.Sprintf("%s\n", id.String())), 0600)
 			if err != nil {
 				logrus.Fatal(err)
 			}
+		} else {
+			fmt.Println(id.String())
+		}
 
-			if len(args) == 2 {
-				err := os.WriteFile(args[1], pubKeyPem, 0666)
-				if err != nil {
-					logrus.Fatal(err)
-				}
+		if len(args) > 1 {
+			err = os.WriteFile(args[1], []byte(fmt.Sprintf("%s\n", id.Recipient().String())), 0666)
+			if err != nil {
+				logrus.Fatal(err)
 			}
 		}
 	},
@@ -80,48 +60,36 @@ public key on stdout.
 	`),
 	Run: func(cmd *cobra.Command, args []string) {
 		var err error
-		var privKeyPem []byte
+		var identitiesData []byte
+		if len(args) > 0 {
+			identitiesData, err = os.ReadFile(args[0])
+		} else {
+			identitiesData, err = io.ReadAll(os.Stdin)
+		}
+		if err != nil {
+			logrus.Fatal(err)
+		}
 
-		if len(args) == 0 {
-			privKeyPem, err = io.ReadAll(os.Stdin)
+		identities, err := age.ParseIdentities(bytes.NewBuffer(identitiesData))
+		if err != nil {
+			logrus.Fatal(err)
+		}
+		if len(identities) != 1 {
+			logrus.Fatalf("unexpected number of identities: %d", len(identities))
+		}
+
+		identity, ok := identities[0].(*age.X25519Identity)
+		if !ok {
+			logrus.Fatalf("unexpected identity type: %v", reflect.TypeOf(identities[0]))
+		}
+
+		if len(args) > 1 {
+			err = os.WriteFile(args[1], []byte(fmt.Sprintf("%s\n", identity.Recipient().String())), 0666)
 			if err != nil {
 				logrus.Fatal(err)
 			}
 		} else {
-			privKeyPem, err = os.ReadFile(args[0])
-			if err != nil {
-				logrus.Fatal(err)
-			}
-		}
-
-		privKeyDer, _ := pem.Decode(privKeyPem)
-		privKey, err := x25519.ParsePrivateKey(privKeyDer.Bytes)
-		if err != nil {
-			logrus.Fatal(err)
-		}
-
-		pubKey, err := privKey.Public()
-		if err != nil {
-			logrus.Fatal(err)
-		}
-
-		pubKeyDer, err := pubKey.Marshal()
-		if err != nil {
-			logrus.Fatal(err)
-		}
-
-		pubKeyPem := pem.EncodeToMemory(&pem.Block{
-			Type:  "PUBLIC KEY",
-			Bytes: pubKeyDer,
-		})
-
-		if len(args) == 2 {
-			err = os.WriteFile(args[1], pubKeyPem, 0666)
-			if err != nil {
-				logrus.Fatal(err)
-			}
-		} else {
-			fmt.Print(string(pubKeyPem))
+			fmt.Println(identity.Recipient().String())
 		}
 	},
 }

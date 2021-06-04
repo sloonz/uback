@@ -81,9 +81,10 @@ even if an incremental backup could have been created.
 
 ### Key / KeyFile
 
-Gives the public key for backup file encryption, either as a PEM file
-(`KeyFile`) or as an inline DER base64-encoded key (which is the base64
-content of the PEM file).
+Gives the public key for backup file encryption,
+either in a file (`KeyFile`) or inline (`Key`). Only X25519
+[age](https://age-encryption.org/) public keys are supported. Multiple
+recipients is not supported.
 
 Although this is discouraged, you can also provide the private key and
 `uback` will automatically derive the public key from it, allowing you
@@ -109,9 +110,9 @@ default policy.
 
 ### Key / KeyFile
 
-Gives the private key for backup file decryption, either as a PEM file
-(`KeyFile`) or as an inline DER base64-encoded key (which is the base64
-content of the PEM file).
+Gives the private key for backup file decryption, either in a file
+(`KeyFile`) or inline (`Key`). Only X25519
+[age](https://age-encryption.org/) keys are supported.
 
 This should option should NEVER be provided during normal backup
 operations, only during restoration of a backup.

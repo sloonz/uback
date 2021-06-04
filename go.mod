@@ -3,6 +3,7 @@ module github.com/sloonz/uback
 go 1.16
 
 require (
+	filippo.io/age v1.0.0-rc.2
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/Masterminds/sprig v2.22.0+incompatible
@@ -16,5 +17,4 @@ require (
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.1.3
-	golang.org/x/crypto v0.0.0-20210506145944-38f3c27a63bf
 )

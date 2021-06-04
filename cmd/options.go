@@ -4,12 +4,12 @@ import (
 	"github.com/sloonz/uback/destinations"
 	"github.com/sloonz/uback/lib"
 	"github.com/sloonz/uback/sources"
-	"github.com/sloonz/uback/x25519"
 
 	"fmt"
 	"os"
 	"path"
 
+	"filippo.io/age"
 	"github.com/sirupsen/logrus"
 )
 
@@ -19,8 +19,8 @@ type optionsBuilder struct {
 	SourceType        string
 	Destination       uback.Destination
 	RetentionPolicies []uback.RetentionPolicy
-	PrivateKey        x25519.PrivateKey
-	PublicKey         x25519.PublicKey
+	PrivateKey        age.Identity
+	PublicKey         age.Recipient
 	Error             error
 }
 
@@ -44,14 +44,14 @@ func (o *optionsBuilder) WithDestination() *optionsBuilder {
 
 func (o *optionsBuilder) WithPublicKey() *optionsBuilder {
 	if o.Error == nil {
-		o.PublicKey, o.Error = x25519.LoadPublicKey(o.Options.String["KeyFile"], o.Options.String["Key"])
+		o.PublicKey, o.Error = uback.LoadPublicKey(o.Options.String["KeyFile"], o.Options.String["Key"])
 	}
 	return o
 }
 
 func (o *optionsBuilder) WithPrivateKey() *optionsBuilder {
 	if o.Error == nil {
-		o.PrivateKey, o.Error = x25519.LoadPrivateKey(o.Options.String["KeyFile"], o.Options.String["Key"])
+		o.PrivateKey, o.Error = uback.LoadPrivateKey(o.Options.String["KeyFile"], o.Options.String["Key"])
 	}
 	return o
 }

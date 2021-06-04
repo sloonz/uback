@@ -112,13 +112,14 @@ var (
 			}
 
 			pr, pw := io.Pipe()
-			cw, err := container.NewWriter(pw, &srcOpts.PublicKey, srcOpts.SourceType, compressionLevel)
-			if err != nil {
-				logrus.Fatal(err)
-			}
-
 			go func() {
-				_, err := io.Copy(cw, data)
+				cw, err := container.NewWriter(pw, srcOpts.PublicKey, srcOpts.SourceType, compressionLevel)
+				if err != nil {
+					pw.CloseWithError(err)
+					return
+				}
+
+				_, err = io.Copy(cw, data)
 				if err != nil {
 					pw.CloseWithError(err)
 					return
