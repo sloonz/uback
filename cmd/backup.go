@@ -5,6 +5,7 @@ import (
 	"github.com/sloonz/uback/lib"
 
 	"encoding/json"
+	"fmt"
 	"io"
 	"os"
 	"time"
@@ -164,6 +165,8 @@ var (
 					logrus.Fatal(err)
 				}
 			}
+
+			fmt.Println(backup.FullName())
 
 			if !cmdBackupNoPrune {
 				err = uback.PruneSnapshots(srcOpts.Source, append([]uback.Snapshot{backup.Snapshot}, snapshots...), srcOpts.RetentionPolicies, state)

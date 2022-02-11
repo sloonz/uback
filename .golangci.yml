@@ -3,7 +3,7 @@ linters:
     - govet
     - gofmt
     - gosec
-    - golint
+    - revive
 run:
   skip-files:
     - "secretstream/secretstream.go" 

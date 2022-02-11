@@ -9,7 +9,7 @@ uback: go.mod go.sum Makefile **/*.go *.go
 .PHONY: test
 test: uback
 	go test ./...
-	bats tests
+	python -m unittest tests/*_tests.py
 
 .PHONY: lint
 lint: .bin/golangci-lint
