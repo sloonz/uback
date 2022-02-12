@@ -30,28 +30,42 @@ type Writer struct {
 }
 
 func NewWriter(w io.Writer, pk age.Recipient, typ string, compressionLevel int) (*Writer, error) {
+	var aw io.WriteCloser
+	var zw *zstd.Encoder
+
 	hdr := bytes.NewBuffer(nil)
 	hdr.WriteString(magic)
-	hdr.WriteString(fmt.Sprintf("type=%s,compression=zstd\n", typ))
+	if pk == nil {
+		hdr.WriteString(fmt.Sprintf("type=%s,compression=zstd,plain=1\n", typ))
+	} else {
+		hdr.WriteString(fmt.Sprintf("type=%s,compression=zstd\n", typ))
+	}
 	_, err := w.Write(hdr.Bytes())
 	if err != nil {
 		return nil, err
 	}
 
-	aw, err := age.Encrypt(w, pk)
-	if err != nil {
-		return nil, err
-	}
+	if pk == nil {
+		zw, err = zstd.NewWriter(w, zstd.WithEncoderLevel(zstd.EncoderLevelFromZstd(compressionLevel)))
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		aw, err = age.Encrypt(w, pk)
+		if err != nil {
+			return nil, err
+		}
 
-	hdrHash := sha256.Sum256(hdr.Bytes())
-	_, err = aw.Write(hdrHash[:])
-	if err != nil {
-		return nil, err
-	}
+		hdrHash := sha256.Sum256(hdr.Bytes())
+		_, err = aw.Write(hdrHash[:])
+		if err != nil {
+			return nil, err
+		}
 
-	zw, err := zstd.NewWriter(aw, zstd.WithEncoderLevel(zstd.EncoderLevelFromZstd(compressionLevel)))
-	if err != nil {
-		return nil, err
+		zw, err = zstd.NewWriter(aw, zstd.WithEncoderLevel(zstd.EncoderLevelFromZstd(compressionLevel)))
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return &Writer{
@@ -74,7 +88,11 @@ func (w *Writer) Close() error {
 		return err
 	}
 
-	return w.aw.Close()
+	if w.aw != nil {
+		return w.aw.Close()
+	}
+
+	return nil
 }
 
 // Decoder for uback format
@@ -122,24 +140,40 @@ func NewReader(r io.Reader) (*Reader, error) {
 // Prepares the decryption process. This must be called before any Read() call
 func (r *Reader) Unseal(sk age.Identity) error {
 	var err error
-	r.ar, err = age.Decrypt(r.br, sk)
-	if err != nil {
-		return err
-	}
 
-	var encryptedHash [sha256.Size]byte
-	_, err = io.ReadFull(r.ar, encryptedHash[:])
-	if err != nil {
-		return err
-	}
+	if sk == nil {
+		if r.Options.String["Plain"] != "1" {
+			return errors.New("Encountered a encrypted backup, but a plaintext one was expected")
+		}
 
-	if subtle.ConstantTimeCompare(encryptedHash[:], r.hdrHash[:]) == 0 {
-		return ErrInvalidHeaderHash
-	}
+		r.zr, err = zstd.NewReader(r.br)
+		if err != nil {
+			return err
+		}
+	} else {
+		if r.Options.String["Plain"] == "1" {
+			return errors.New("Encountered a plaintext backup, but secret key has been provided")
+		}
 
-	r.zr, err = zstd.NewReader(r.ar)
-	if err != nil {
-		return err
+		r.ar, err = age.Decrypt(r.br, sk)
+		if err != nil {
+			return err
+		}
+
+		var encryptedHash [sha256.Size]byte
+		_, err = io.ReadFull(r.ar, encryptedHash[:])
+		if err != nil {
+			return err
+		}
+
+		if subtle.ConstantTimeCompare(encryptedHash[:], r.hdrHash[:]) == 0 {
+			return ErrInvalidHeaderHash
+		}
+
+		r.zr, err = zstd.NewReader(r.ar)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

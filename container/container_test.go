@@ -171,3 +171,60 @@ func TestTamperedPayload(t *testing.T) {
 		t.Error("expected decryption error, got none")
 	}
 }
+
+func TestUnencrypted(t *testing.T) {
+	m := "In cryptography, Curve25519 is an elliptic curve offering 128 bits of security (256 bits key size) and designed for use with the elliptic curve Diffie-Hellman (ECDH) key agreement scheme." +
+		"It is one of the fastest ECC curves and is not covered by any known patents."
+
+	buf := bytes.NewBuffer(nil)
+	w, err := NewWriter(buf, nil, "test", 3)
+	if err != nil {
+		t.Errorf("cannot create writer: %v", err)
+		return
+	}
+
+	for i := 0; i < 100; i++ {
+		n, err := w.Write([]byte(m))
+		if err != nil || n != len(m) {
+			t.Errorf("cannot write plaintext: %v", err)
+			return
+		}
+	}
+
+	err = w.Close()
+	if err != nil {
+		t.Errorf("cannot close container: %v", err)
+		return
+	}
+
+	r, err := NewReader(buf)
+	if err != nil {
+		t.Errorf("cannot create reader: %v", err)
+		return
+	}
+
+	if r.Options.String["Type"] != "test" {
+		t.Errorf("type mismatch; expected: test, got: %v", r.Options.String["Type"])
+		return
+	}
+
+	err = r.Unseal(nil)
+	if err != nil {
+		t.Errorf("cannot unseal reader: %v", err)
+	}
+
+	m2, err := io.ReadAll(r)
+	if err != nil {
+		t.Errorf("cannot read: %v", err)
+		return
+	}
+
+	err = r.Close()
+	if err != nil {
+		t.Error(err)
+	}
+
+	if string(m2) != strings.Repeat(m, 100) {
+		t.Errorf("different plaintext; expected: %v, got: %v", m, m2)
+	}
+}

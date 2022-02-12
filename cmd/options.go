@@ -44,14 +44,22 @@ func (o *optionsBuilder) WithDestination() *optionsBuilder {
 
 func (o *optionsBuilder) WithPublicKey() *optionsBuilder {
 	if o.Error == nil {
-		o.PublicKey, o.Error = uback.LoadPublicKey(o.Options.String["KeyFile"], o.Options.String["Key"])
+		if o.Options.String["NoEncryption"] != "" {
+			o.PublicKey = nil
+		} else {
+			o.PublicKey, o.Error = uback.LoadPublicKey(o.Options.String["KeyFile"], o.Options.String["Key"])
+		}
 	}
 	return o
 }
 
 func (o *optionsBuilder) WithPrivateKey() *optionsBuilder {
 	if o.Error == nil {
-		o.PrivateKey, o.Error = uback.LoadPrivateKey(o.Options.String["KeyFile"], o.Options.String["Key"])
+		if o.Options.String["NoEncryption"] != "" {
+			o.PrivateKey = nil
+		} else {
+			o.PrivateKey, o.Error = uback.LoadPrivateKey(o.Options.String["KeyFile"], o.Options.String["Key"])
+		}
 	}
 	return o
 }
