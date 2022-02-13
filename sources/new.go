@@ -13,6 +13,8 @@ import (
 func New(options *uback.Options) (src uback.Source, typ string, err error) {
 	typ = options.String["Type"]
 	switch typ {
+	case "btrfs":
+		src, err = newBtrfsSource(options)
 	case "tar":
 		src, err = newTarSource(options)
 	case "mariabackup":
@@ -26,8 +28,10 @@ func New(options *uback.Options) (src uback.Source, typ string, err error) {
 }
 
 // Create a new source only from its type ; you should be able to call only RestoreBackup on the returned interface
-func NewForRestoration(typ string) (uback.Source, error) {
+func NewForRestoration(options *uback.Options, typ string) (uback.Source, error) {
 	switch typ {
+	case "btrfs":
+		return newBtrfsSourceForRestoration(options)
 	case "tar":
 		return newTarSourceForRestoration()
 	case "mariabackup":
@@ -38,7 +42,7 @@ func NewForRestoration(typ string) (uback.Source, error) {
 			if err != nil {
 				return nil, err
 			}
-			return newCommandSourceForRestoration(command)
+			return newCommandSourceForRestoration(command, options)
 		}
 		return nil, fmt.Errorf("invalid source type %v", typ)
 	}

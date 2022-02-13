@@ -5,7 +5,7 @@ class SrcTarTests(unittest.TestCase, SrcBaseTests):
         with tempfile.TemporaryDirectory() as d:
             source = f"type=tar,path={d}/source,key-file={d}/backup.pub,state-file={d}/state.json,snapshots-path={d}/snapshots,full-interval=weekly,@command=tar,@command=--exclude=./c,@command=--exclude=./d"
             dest = f"id=test,type=fs,path={d}/backups,@retention-policy=daily=3,key-file={d}/backup.key"
-            b1, b2, b3 = self._test_src(d, source, dest)
+            b1, b2, b3 = self._test_src(d, source, dest, test_ignore=True, test_delete=False)
 
             # Check that incremental backups are actually incremental
             subprocess.run(["tar", "-C", f"{d}/restore", "-x"], input=subprocess.check_output([uback, "container", "extract", "-k", f"{d}/backup.key"], input=read_file(f"{d}/backups/{b2}.ubkp")), check=True)

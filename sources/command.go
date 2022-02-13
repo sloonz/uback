@@ -72,8 +72,8 @@ func newCommandSource(options *uback.Options) (uback.Source, string, error) {
 	return &commandSource{options: options, command: command, env: env}, typ, nil
 }
 
-func newCommandSourceForRestoration(command []string) (uback.Source, error) {
-	return &commandSource{command: command}, nil
+func newCommandSourceForRestoration(command []string, options *uback.Options) (uback.Source, error) {
+	return &commandSource{command: command, options: options}, nil
 }
 
 // Part of uback.Source interface

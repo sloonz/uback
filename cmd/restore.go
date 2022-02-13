@@ -18,6 +18,11 @@ import (
 func restore(dst uback.Destination, b uback.Backup, sk age.Identity, targetDir string) error {
 	logrus.Printf("restoring %v onto %v", b.Filename(), targetDir)
 
+	srcOpts, err := uback.EvalOptions(uback.SplitOptions(cmdRestoreSourceOptions), presets)
+	if err != nil {
+		logrus.Fatal(err)
+	}
+
 	var data io.ReadCloser
 	if f, err := os.Open(path.Join(targetDir, b.Filename())); err == nil {
 		data = f
@@ -35,7 +40,7 @@ func restore(dst uback.Destination, b uback.Backup, sk age.Identity, targetDir s
 	}
 	defer r.Close()
 
-	src, err := sources.NewForRestoration(r.Options.String["Type"])
+	src, err := sources.NewForRestoration(srcOpts, r.Options.String["Type"])
 	if err != nil {
 		return err
 	}
@@ -54,9 +59,10 @@ func restore(dst uback.Destination, b uback.Backup, sk age.Identity, targetDir s
 }
 
 var (
-	cmdRestoreTargetDir string
-	cmdRestoreUseLocal  bool
-	cmdRestore          = &cobra.Command{
+	cmdRestoreTargetDir     string
+	cmdRestoreSourceOptions string
+	cmdRestoreUseLocal      bool
+	cmdRestore              = &cobra.Command{
 		Use:   "restore <dest> [backup-name]",
 		Short: "Restore a backup",
 		Args:  cobra.RangeArgs(1, 2),
@@ -104,5 +110,6 @@ var (
 
 func init() {
 	cmdRestore.Flags().StringVarP(&cmdRestoreTargetDir, "target-dir", "d", ".", "target dir")
+	cmdRestore.Flags().StringVarP(&cmdRestoreSourceOptions, "source-options", "o", ".", "additional source options")
 	cmdRestore.Flags().BoolVarP(&cmdRestoreUseLocal, "local", "l", false, "use local backup files if present")
 }
