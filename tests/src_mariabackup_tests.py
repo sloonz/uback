@@ -10,6 +10,16 @@ class SrcMariabackupTests(unittest.TestCase):
         subprocess.check_call(["docker", "container", "start", self.container])
         subprocess.check_call(["docker", "exec", self.container, "chmod", "777", f"{self.tmpdir}/snapshots"])
 
+        # First start involves a server restart, so the server being up is not a good enough reason to consider it available
+        # To make it work 100% of the time, we have to
+        #  1. Run it, wait for it to be up. At this point "being up" may mean "being up for good" or "will restart very soon".
+        #  2. Restart the container. Since it’s no longer the first start, the server will not restart by itself.
+        #  3. Wait for it to be up. Now "being up" really means "being up for good".
+        for i in range(300):
+            if subprocess.run(["docker", "exec", "-i", self.container, "mysql", "-uroot", "-ptest", "-e", "SELECT VERSION()"]).returncode == 0:
+                break
+            time.sleep(0.1)
+        subprocess.run(["docker", "container", "restart", self.container], check=True)
         for i in range(300):
             if subprocess.run(["docker", "exec", "-i", self.container, "mysql", "-uroot", "-ptest", "-e", "SELECT VERSION()"]).returncode == 0:
                 break
