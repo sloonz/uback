@@ -78,8 +78,10 @@ class SrcBaseTests:
             self.assertEqual(set(os.listdir(f"{d}/restore/{s4}")), {"a"})
             self._cleanup_restore(d)
             time.sleep(0.01)
+        else:
+            b4 = None
 
-        return b1, b2, b3
+        return b1, b2, b3, b4
 
 class DestBaseTests:
     def _test_dest(self, d, source, dest):

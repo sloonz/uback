@@ -270,5 +270,18 @@ func BuildCommand(command []string, additionalArgs ...string) *exec.Cmd {
 	fullArgs := make([]string, 0, len(command)+len(additionalArgs)-1)
 	fullArgs = append(fullArgs, command[1:]...)
 	fullArgs = append(fullArgs, additionalArgs...)
-	return exec.Command(command[0], fullArgs...)
+	cmd := exec.Command(command[0], fullArgs...)
+	cmd.Stdout = os.Stderr // default stdout to stderr because we don't want other processes to output stuff on our output
+	cmd.Stderr = os.Stderr
+	return cmd
+}
+
+func StartCommand(log *logrus.Entry, cmd *exec.Cmd) error {
+	log.Printf("starting: %s", cmd.String())
+	return cmd.Start()
+}
+
+func RunCommand(log *logrus.Entry, cmd *exec.Cmd) error {
+	log.Printf("starting: %s", cmd.String())
+	return cmd.Run()
 }

@@ -77,7 +77,7 @@ format and keys format.
 ### 0.4 (next)
 
 * [x] `btrfs` source
-* [ ] `btrfs` destintation
+* [x] `btrfs` destination
 
 ### 0.5
 

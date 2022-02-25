@@ -8,6 +8,8 @@ import (
 
 func New(options *uback.Options) (uback.Destination, error) {
 	switch options.String["Type"] {
+	case "btrfs":
+		return newBtrfsDestination(options)
 	case "fs":
 		return newFSDestination(options)
 	case "object-storage":
