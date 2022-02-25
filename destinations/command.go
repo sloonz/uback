@@ -18,7 +18,7 @@ import (
 var (
 	ErrCommandMissing = errors.New("command destination: missing command")
 	commandLog        = logrus.WithFields(logrus.Fields{
-		"destination": "fs",
+		"destination": "command",
 	})
 )
 
