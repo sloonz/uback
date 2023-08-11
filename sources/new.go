@@ -35,7 +35,7 @@ func NewForRestoration(options *uback.Options, typ string) (uback.Source, error)
 	case "tar":
 		return newTarSourceForRestoration()
 	case "mariabackup":
-		return newMariaBackupSourceForRestoration()
+		return newMariaBackupSourceForRestoration(options)
 	default:
 		if strings.HasPrefix(typ, "command:") {
 			command, err := shlex.Split(typ[len("command:"):])

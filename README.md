@@ -78,6 +78,11 @@ format and keys format.
 
 * [x] `btrfs` source
 * [x] `btrfs` destination
+* [x] remove mariabackup footguns
+  * [x] add the option to use a dockerized mariabackup in the restoration
+  process to have an exect version match
+  * [x] returns an error when attempting to create an incremental backup
+  based on a full backup created by a different version
 
 ### 0.5
 
@@ -85,11 +90,6 @@ format and keys format.
 
 ### 0.6
 
-* [ ] remove mariabackup footguns
-  * [ ] add the option to use a dockerized mariabackup in the restoration
-  process to have an exect version match
-  * [ ] returns an error when attempting to create an incremental backup
-  based on a full backup created by a different version
 * [ ] Should be suitable for production
 
 ### 1.0

@@ -18,8 +18,10 @@ import (
 )
 
 var (
-	ErrMariaBackupCommand = errors.New("mariabackup source: missing or invalid command")
-	mariaBackupLog        = logrus.WithFields(logrus.Fields{
+	ErrMariaBackupCommand  = errors.New("mariabackup source: missing or invalid mariabackup command")
+	ErrMariadbCommand      = errors.New("mariabackup source: missing or invalid mariadb command")
+	ErrParseMariadbVersion = errors.New("mariabackup source: cannot parse version information")
+	mariaBackupLog         = logrus.WithFields(logrus.Fields{
 		"source": "mariabackup",
 	})
 
@@ -31,10 +33,13 @@ var (
 )
 
 type mariaBackupSource struct {
-	options       *uback.Options
-	snapshotsPath string
-	command       []string
-	authFileData  string
+	options           *uback.Options
+	snapshotsPath     string
+	command           []string
+	mdbVersionCommand []string
+	authFileData      string
+	versionCheck      bool
+	useDocker         bool
 }
 
 func newMariaBackupSource(options *uback.Options) (uback.Source, error) {
@@ -48,9 +53,19 @@ func newMariaBackupSource(options *uback.Options) (uback.Source, error) {
 		}
 	}
 
-	command := options.GetCommand("Command", []string{"mariabackup"})
+	versionCheck, err := options.GetBoolean("VersionCheck", true)
+	if err != nil {
+		return nil, err
+	}
+
+	command := options.GetCommand("Command", []string{"mariadb-backup"})
 	if len(command) == 0 {
 		return nil, ErrMariaBackupCommand
+	}
+
+	mdbVersionCommand := options.GetCommand("MariadbCommand", []string{"mariadb"})
+	if len(mdbVersionCommand) == 0 && versionCheck {
+		return nil, ErrMariadbCommand
 	}
 
 	authFileData := ""
@@ -66,11 +81,27 @@ func newMariaBackupSource(options *uback.Options) (uback.Source, error) {
 		}
 	}
 
-	return &mariaBackupSource{options: options, snapshotsPath: snapshotsPath, command: command, authFileData: authFileData}, nil
+	return &mariaBackupSource{
+		options:           options,
+		snapshotsPath:     snapshotsPath,
+		command:           command,
+		mdbVersionCommand: mdbVersionCommand,
+		versionCheck:      versionCheck,
+		authFileData:      authFileData}, nil
 }
 
-func newMariaBackupSourceForRestoration() (uback.Source, error) {
-	return &mariaBackupSource{}, nil
+func newMariaBackupSourceForRestoration(options *uback.Options) (uback.Source, error) {
+	command := options.GetCommand("Command", []string{"mariadb-backup"})
+	if len(command) == 0 {
+		return nil, ErrMariaBackupCommand
+	}
+
+	useDocker, err := options.GetBoolean("UseDocker", true)
+	if err != nil {
+		return nil, err
+	}
+
+	return &mariaBackupSource{command: command, useDocker: useDocker}, nil
 }
 
 // Part of uback.Source interface
@@ -138,6 +169,38 @@ func (s *mariaBackupSource) CreateBackup(baseSnapshot *uback.Snapshot) (uback.Ba
 		command = append(command, fmt.Sprintf("--defaults-file=%s", authFile.Name()))
 	}
 
+	var serverVersion []byte
+	mdbVersionCommand := append([]string{}, s.mdbVersionCommand...)
+	if s.authFileData != "" {
+		mdbVersionCommand = append(mdbVersionCommand, fmt.Sprintf("--defaults-file=%s", authFile.Name()))
+	}
+	mdbVersionCommand = append(mdbVersionCommand, "-BNe", "select version()")
+
+	if baseSnapshot != nil && s.versionCheck {
+		baseInfo, err := os.ReadFile(path.Join(s.snapshotsPath, baseSnapshot.Name(), "xtrabackup_info"))
+		if err != nil {
+			return uback.Backup{}, nil, err
+		}
+
+		snapshotVersionMatch := regexp.MustCompile(`(?m)^server_version\s*=\s*(\d+\.\d+\.\d+)`).FindSubmatch(baseInfo)
+		if len(snapshotVersionMatch) != 2 {
+			return uback.Backup{}, nil, ErrParseMariadbVersion
+		}
+
+		cmd := exec.Command(mdbVersionCommand[0], mdbVersionCommand[1:]...)
+		cmd.Stderr = os.Stderr
+		serverVersion, err = cmd.Output()
+		if err != nil {
+			return uback.Backup{}, nil, fmt.Errorf("cannot get mariadb server version: %v", err)
+		}
+
+		serverVersionMatch := regexp.MustCompile(`\d+\.\d+\.\d+`).Find(serverVersion)
+		if string(serverVersionMatch) != string(snapshotVersionMatch[1]) {
+			logrus.Warnf("mismatch between base backup server version (%s) and current server version (%s), forcing incremental backup", string(snapshotVersionMatch[1]), string(serverVersionMatch))
+			baseSnapshot = nil
+		}
+	}
+
 	command = append(command, "--backup")
 	command = append(command, "--stream=mbstream")
 	if s.snapshotsPath != "" {
@@ -153,6 +216,18 @@ func (s *mariaBackupSource) CreateBackup(baseSnapshot *uback.Snapshot) (uback.Ba
 	mariaBackupLog.Printf("creating backup: %s", backup.Filename())
 
 	return uback.WrapSourceCommand(backup, exec.Command(command[0], command[1:]...), func(err error) error {
+		if serverVersion != nil {
+			cmd := exec.Command(mdbVersionCommand[0], mdbVersionCommand[1:]...)
+			cmd.Stderr = os.Stderr
+			newServerVersion, err := cmd.Output()
+			if err != nil {
+				return fmt.Errorf("cannot get mariadb server version: %v", err)
+			}
+
+			if string(serverVersion) != string(newServerVersion) {
+				return errors.New("race condition: server changed its version during backup")
+			}
+		}
 		if authFile != nil {
 			n := authFile.Name()
 			authFile.Close()
@@ -195,7 +270,13 @@ func (s *mariaBackupSource) RestoreBackup(targetDir string, backup uback.Backup,
 		mariaBackupLog.Warnf("cannot write sqldump-local.sh script: %v", err)
 	}
 
-	cmd := exec.Command("mbstream", "-x", "-C", restoreDir)
+	var extractCommand []string
+	if s.useDocker {
+		extractCommand = append(extractCommand, "docker", "run", "--rm", "-u", fmt.Sprintf("%d", os.Getuid()), "-v", fmt.Sprintf("%s:%s", targetDir, targetDir), "-i", "mariadb:latest")
+	}
+	extractCommand = append(extractCommand, "mbstream", "-x", "-C", restoreDir)
+
+	cmd := exec.Command(extractCommand[0], extractCommand[1:]...)
 	cmd.Stdin = data
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -205,9 +286,28 @@ func (s *mariaBackupSource) RestoreBackup(targetDir string, backup uback.Backup,
 		return err
 	}
 
+	var prepareCommand []string
+	if s.useDocker {
+		info, err := os.ReadFile(path.Join(restoreDir, "xtrabackup_info"))
+		if err != nil {
+			return err
+		}
+
+		versionMatch := regexp.MustCompile(`(?m)^server_version\s*=\s*(\d+\.\d+\.\d+)`).FindSubmatch(info)
+		if len(versionMatch) != 2 {
+			return err
+		}
+
+		version := string(versionMatch[1])
+		prepareCommand = append(prepareCommand, "docker", "run", "--rm", "-u", fmt.Sprintf("%d", os.Getuid()), "-v", fmt.Sprintf("%v:%v", targetDir, targetDir), "-i", fmt.Sprintf("mariadb:%s", version), "mariadb-backup")
+	} else {
+		prepareCommand = append(prepareCommand, s.command...)
+	}
+
 	if backup.BaseSnapshot != nil {
 		baseDir := path.Join(targetDir, backup.BaseSnapshot.Name())
-		cmd = exec.Command("mariabackup", "--prepare", fmt.Sprintf("--target-dir=%s", baseDir), fmt.Sprintf("--incremental-dir=%s", restoreDir))
+		prepareCommand = append(prepareCommand, "--prepare", fmt.Sprintf("--target-dir=%s", baseDir), fmt.Sprintf("--incremental-dir=%s", restoreDir))
+		cmd = exec.Command(prepareCommand[0], prepareCommand[1:]...)
 		cmd.Stdin = nil
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
@@ -225,7 +325,8 @@ func (s *mariaBackupSource) RestoreBackup(targetDir string, backup uback.Backup,
 		return os.Rename(baseDir, restoreDir)
 	}
 
-	cmd = exec.Command("mariabackup", "--prepare", fmt.Sprintf("--target-dir=%s", restoreDir))
+	prepareCommand = append(prepareCommand, "--prepare", fmt.Sprintf("--target-dir=%s", restoreDir))
+	cmd = exec.Command(prepareCommand[0], prepareCommand[1:]...)
 	cmd.Stdin = nil
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr

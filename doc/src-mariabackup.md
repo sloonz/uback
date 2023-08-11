@@ -2,19 +2,6 @@
 
 Backup a MariaDB instance using mariabackup. Supports incremental backups.
 
-## Limitations
-
-As stated in the `mariabackup` documentation, `mariabackup` version and
-the mariadb server version should be the same when creating a backup.
-
-While `mariabackup` won’t complain when creating an incremental
-backup based on a full backup made by a previous version, nowhere in the
-documentation it is explicitly stated that it is a valid operation and
-it makes the restoration process much more complicated, and is therefore
-unsupported by `uback`. The simplest way to avoid any trouble related to
-this is to remove the contents of `SnapshotsPath` every time you upgrade
-mariadb, so a full backup will be forced at next backup.
-
 ## Notes on restoration
 
 Contrarily to `mariadb-dump`, the result of a restoration is a `mariadb`
@@ -54,20 +41,46 @@ is properly configured).
 
 ### @Command
 
-Optional, defaults: `[mariabackup]`
+Optional, defaults: `[mariadb-backup]`
 
 Caveat emptor : this may be tricky when used in conjonction with the
 `User` or `Password` options.
 
-The `User` and `Password` options create a temporary file and pass it to
-`mariabackup` via the `--defaults-file` option. However, `mariabackup`
-requires the `--defaults-file` option to be the first one passed in the
-command line. So while you can perfectly combine the `User` or
-`Password` option with `@Command` if your intention is to prepend stuff
-to `mariabackup` (for example to change the base command to `sudo -u
+The `User` and `Password` options create a temporary file and pass
+it to `mariadb-backup` via the `--defaults-file` option. However,
+`mariadb-backup` requires the `--defaults-file` option to be the first one
+passed in the command line. So while you can perfectly combine the `User`
+or `Password` option with `@Command` if your intention is to prepend
+stuff to `mariabackup` (for example to change the base command to `sudo -u
 dbuser mariabackup`), you cannot do so to append stuff (extra arguments,
 like `--databases-exclude`) if you have `User` or `Password` set.
 
 If you run into this issue, the recommended solution is to simply set-up
 Unix Authentication for the user that will run `mariabackup` so you can
-authenticate without password the user with `@Command=-ubackupuser`.
+authenticate without password the user with `@Command=mariadb-backup
+-ubackupuser`.
+
+### VersionCheck
+
+Optional, defaults: `true`
+
+When doing an incremental backup, check that base backup server version
+and current server version are the same. If they are different, force
+a full backup.
+
+### @MariadbCommand
+
+Optional, defaults: `[mariadb]`
+
+Same remarks as `Command` apply. This is only used for server version
+check.
+
+### UseDocker (restoration only)
+
+Optional, defaults: `true`
+
+During the restoration process, `mariadb-backup --prepare` must be run,
+with the same version than the server that created the backup (althought
+it tend to work even with version mismatch). If this option is set
+to true, run the command in a docker process with the correct mariadb
+version. If false, uses `@Command` for the restoration process.

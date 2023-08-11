@@ -3,6 +3,7 @@ package uback
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path"
 	"regexp"
@@ -58,6 +59,21 @@ func (o *Options) GetCommand(key string, defaults []string) []string {
 	}
 
 	return defaults
+}
+
+func (o *Options) GetBoolean(key string, defaults bool) (bool, error) {
+	if s, ok := o.String[key]; ok {
+		ls := strings.ToLower(s)
+		if ls == "1" || ls == "true" || ls == "yes" {
+			return true, nil
+		} else if ls == "0" || ls == "false" || ls == "no" {
+			return false, nil
+		} else {
+			return false, fmt.Errorf("invalid boolean: %s", s)
+		}
+	}
+
+	return defaults, nil
 }
 
 // Parse retention policies
