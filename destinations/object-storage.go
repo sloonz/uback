@@ -29,7 +29,7 @@ type objectStorageDestination struct {
 }
 
 func newObjectStorageDestination(options *uback.Options) (uback.Destination, error) {
-	u, err := url.Parse(options.String["Url"])
+	u, err := url.Parse(options.String["URL"])
 	if err != nil {
 		osLog.Warnf("cannot parse url: %v", err)
 	}

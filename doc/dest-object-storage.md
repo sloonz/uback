@@ -24,7 +24,7 @@ uploaded backups may therefore appear in the backups list.
 
 ## Options
 
-### Url
+### URL
 
 Allows you to specify multiple options in one. See above for the
 correspondence between URL parts and specific options.
