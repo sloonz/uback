@@ -48,7 +48,7 @@ var (
 			fetchedBackups := []uback.Backup{*targetBackup}
 			if cmdFetchRecursive {
 				var ok bool
-				fetchedBackups, ok = uback.GetFullChain(backups, *targetBackup, uback.MakeIndex(backups))
+				fetchedBackups, ok = uback.GetFullChain(*targetBackup, uback.MakeIndex(backups))
 				if !ok {
 					logrus.Warn("the incremental backups chain do not reference a final full backup")
 				}

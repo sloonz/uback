@@ -20,7 +20,7 @@ clean:
 	rm -f uback ./.bin/golangci-lint
 
 .bin/golangci-lint:
-	bash <(curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh) -d -b .bin
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b .bin
 
 .bin/goreleaser:
 	bash <(curl -sfL https://install.goreleaser.com/github.com/goreleaser/goreleaser.sh) -d -b .bin

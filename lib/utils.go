@@ -184,9 +184,9 @@ func MakeIndex(backups []Backup) map[string]Backup {
 }
 
 // Create the dependencies chain from a backup:
-//  * for a full backup, the chain consists only of the backup itself
-//  * for an incremental backup, the chain consists of the backup itself and its base's chain
-func GetFullChain(backups []Backup, backup Backup, index map[string]Backup) ([]Backup, bool) {
+//   - for a full backup, the chain consists only of the backup itself
+//   - for an incremental backup, the chain consists of the backup itself and its base's chain
+func GetFullChain(backup Backup, index map[string]Backup) ([]Backup, bool) {
 	ok := true
 	chain := []Backup{backup}
 	for !backup.IsFull() {

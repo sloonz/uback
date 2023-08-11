@@ -146,7 +146,7 @@ func GetPrunedBackups(backups []Backup, policies []RetentionPolicy) ([]Backup, e
 
 	subjects := make([]RetentionPolicySubject, 0, len(backups))
 	for _, b := range backups {
-		chain, ok := GetFullChain(backups, b, index)
+		chain, ok := GetFullChain(b, index)
 		if ok {
 			subjects = append(subjects, b)
 			chains[b.Name()] = chain

@@ -93,7 +93,7 @@ var (
 				logrus.Fatal("cannot find backup")
 			}
 
-			fetchedBackups, ok := uback.GetFullChain(backups, *targetBackup, uback.MakeIndex(backups))
+			fetchedBackups, ok := uback.GetFullChain(*targetBackup, uback.MakeIndex(backups))
 			if !ok {
 				logrus.Fatal("the incremental backups chain do not reference a final full backup")
 			}
