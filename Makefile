@@ -23,7 +23,7 @@ clean:
 	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b .bin
 
 .bin/goreleaser:
-	bash <(curl -sfL https://install.goreleaser.com/github.com/goreleaser/goreleaser.sh) -d -b .bin
+	GOBIN="$$(pwd)/.bin" go install github.com/goreleaser/goreleaser@latest
 
 release: .bin/goreleaser
 	./.bin/goreleaser release

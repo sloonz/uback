@@ -15,8 +15,6 @@ archives:
     wrap_in_directory: true
     builds:
       - uback
-    replacements:
-      amd64: x86-64
     files:
       - LICENSE
       - README.md
@@ -35,3 +33,4 @@ changelog:
       - Merge branch
       - "test:"
       - "build:"
+      - "chore:"
