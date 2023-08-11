@@ -74,7 +74,7 @@ stable with a good test suite. Here is a rough sketch of the roadmap :
 will be the first (and hopefully the last) breaking change for the file
 format and keys format.
 
-### 0.4 (next)
+### 0.4 (released)
 
 * [x] `btrfs` source
 * [x] `btrfs` destination
