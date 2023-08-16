@@ -29,6 +29,7 @@ changelog:
       - chlg skip
       - ci skip
       - typo
+      - minor
       - Merge pull request
       - Merge branch
       - "test:"

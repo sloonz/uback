@@ -4,6 +4,7 @@ import (
 	"github.com/sloonz/uback/lib"
 
 	"context"
+	"fmt"
 	"io"
 	"net/url"
 	"path"
@@ -78,7 +79,7 @@ func newObjectStorageDestination(options *uback.Options) (uback.Destination, err
 	})
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create object storage instance: %v", err)
 	}
 
 	return &objectStorageDestination{options: options, client: client, prefix: prefix, bucket: bucket}, nil
@@ -96,7 +97,7 @@ func (d *objectStorageDestination) ListBackups() ([]uback.Backup, error) {
 
 	for obj := range objectsCh {
 		if obj.Err != nil {
-			return nil, obj.Err
+			return nil, fmt.Errorf("failed to list backups on object storage: %v", obj.Err)
 		}
 
 		if strings.HasPrefix(obj.Key, ".") || strings.HasPrefix(obj.Key, "_") || strings.HasSuffix(obj.Key, "/") {
@@ -119,7 +120,11 @@ func (d *objectStorageDestination) ListBackups() ([]uback.Backup, error) {
 }
 
 func (d *objectStorageDestination) RemoveBackup(backup uback.Backup) error {
-	return d.client.RemoveObject(context.Background(), d.bucket, d.prefix+backup.Filename(), minio.RemoveObjectOptions{})
+	err := d.client.RemoveObject(context.Background(), d.bucket, d.prefix+backup.Filename(), minio.RemoveObjectOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to remove backup from object storage: %v", err)
+	}
+	return nil
 }
 
 func (d *objectStorageDestination) SendBackup(backup uback.Backup, data io.Reader) error {
@@ -127,10 +132,15 @@ func (d *objectStorageDestination) SendBackup(backup uback.Backup, data io.Reade
 	_, err := d.client.PutObject(context.Background(), d.bucket, d.prefix+backup.Filename(), data, -1, minio.PutObjectOptions{})
 	if err != nil {
 		d.client.RemoveObject(context.Background(), d.bucket, d.prefix+backup.Filename(), minio.RemoveObjectOptions{}) //nolint:errcheck
+		return fmt.Errorf("failed to write backup to object storage: %v", err)
 	}
-	return err
+	return nil
 }
 
 func (d *objectStorageDestination) ReceiveBackup(backup uback.Backup) (io.ReadCloser, error) {
-	return d.client.GetObject(context.Background(), d.bucket, d.prefix+backup.Filename(), minio.GetObjectOptions{})
+	rc, err := d.client.GetObject(context.Background(), d.bucket, d.prefix+backup.Filename(), minio.GetObjectOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to read backup from object storage: %v", err)
+	}
+	return rc, nil
 }
