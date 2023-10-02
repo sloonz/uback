@@ -32,6 +32,22 @@ var (
 	mariaBackupLocalScript []byte
 )
 
+func readBackupInfo(basePath string) ([]byte, error) {
+	info, err := os.ReadFile(path.Join(basePath, "xtrabackup_info"))
+	if err == nil {
+		return info, nil
+	}
+
+	if os.IsNotExist(err) {
+		info, err = os.ReadFile(path.Join(basePath, "mariadb_backup_info"))
+		if err == nil {
+			return info, nil
+		}
+	}
+
+	return nil, err
+}
+
 type mariaBackupSource struct {
 	options           *uback.Options
 	snapshotsPath     string
@@ -177,7 +193,7 @@ func (s *mariaBackupSource) CreateBackup(baseSnapshot *uback.Snapshot) (uback.Ba
 	mdbVersionCommand = append(mdbVersionCommand, "-BNe", "select version()")
 
 	if baseSnapshot != nil && s.versionCheck {
-		baseInfo, err := os.ReadFile(path.Join(s.snapshotsPath, baseSnapshot.Name(), "xtrabackup_info"))
+		baseInfo, err := readBackupInfo(path.Join(s.snapshotsPath, baseSnapshot.Name()))
 		if err != nil {
 			return uback.Backup{}, nil, err
 		}
@@ -288,7 +304,7 @@ func (s *mariaBackupSource) RestoreBackup(targetDir string, backup uback.Backup,
 
 	var prepareCommand []string
 	if s.useDocker {
-		info, err := os.ReadFile(path.Join(restoreDir, "xtrabackup_info"))
+		info, err := readBackupInfo(restoreDir)
 		if err != nil {
 			return err
 		}
