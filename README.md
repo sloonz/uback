@@ -84,6 +84,10 @@ format and keys format.
   * [x] returns an error when attempting to create an incremental backup
   based on a full backup created by a different version
 
+### 0.4.1 (released)
+
+* [x] Fix a compatibility issue with MariaDB 11
+
 ### 0.5
 
 * [ ] Proxy support
