@@ -91,7 +91,7 @@ func (d *objectStorageDestination) ListBackups() ([]uback.Backup, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	objectsCh := d.client.ListObjects(ctx, d.bucket, minio.ListObjectsOptions{
 		Prefix:    d.prefix,
-		Recursive: true,
+		Recursive: false,
 	})
 	defer cancel()
 

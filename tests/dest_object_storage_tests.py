@@ -49,3 +49,7 @@ class DestObjectStorageTests(unittest.TestCase):
             subprocess.check_call([uback, "restore", "-d", f"{d}/restore", dest])
             self.assertEqual(b"hello", read_file(glob.glob(f"{d}/restore/*/a")[0]))
             self.assertEqual(b"world", read_file(glob.glob(f"{d}/restore/*/b")[0]))
+
+            # Searching on "/" should not yield any result in the "/test/" prefix
+            parent_dest = f"id=test,type=object-storage,@retention-policy=daily=3,key-file={d}/backup.key,url=http://minioadmin:minioadmin@localhost:9000/testbucket"
+            self.assertEqual(0, len(subprocess.check_output([uback, "list", "backups", parent_dest]).splitlines()))
