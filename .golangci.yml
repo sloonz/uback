@@ -15,3 +15,7 @@ linters-settings:
     excludes:
       - G204
       - G306
+  revive:
+    rules:
+      - name: indent-error-flow
+        disabled: true
