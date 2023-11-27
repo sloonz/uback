@@ -140,7 +140,7 @@ func (s *btrfsSource) CreateBackup(baseSnapshot *uback.Snapshot) (uback.Backup, 
 	}
 	args = append(args, tmpSnapshotPath)
 	return uback.WrapSourceCommand(backup, exec.Command(args[0], args[1:]...), func(err error) error {
-		if err != nil {
+		if err != nil || s.snapshotsPath == "" {
 			args = nil
 			args = append(args, s.deleteCommand...)
 			args = append(args, tmpSnapshotPath)
