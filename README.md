@@ -38,12 +38,14 @@ specific to each source or destination.
 * [tar](doc/src-tar.md)
 * [mariabackup](doc/src-mariabackup.md): MariaDB backup system, supports
 incremental backups
+* [btrfs](doc/src-btrfs.md): btrfs snapshots
 
-## Supported Destintations
+## Supported Destinations
 
 * [fs](doc/dest-fs.md): local filesystem
 * [object-storage](doc/dest-object-storage.md): S3-compatible object
 storage
+* [btrfs](doc/dest-btrfs.md)
 
 ## Current Status and Planned Features
 
