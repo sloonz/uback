@@ -166,7 +166,7 @@ func (s *btrfsSource) RestoreBackup(targetDir string, backup uback.Backup, data 
 	cmd.Stderr = os.Stderr
 	err := cmd.Run()
 	if err != nil {
-		return nil
+		return err
 	}
 
 	return os.Rename(path.Join(targetDir, "_tmp-"+backup.Snapshot.Name()), path.Join(targetDir, backup.Snapshot.Name()))
