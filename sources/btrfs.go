@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/exec"
 	"path"
 	"regexp"
 	"strings"
@@ -98,14 +97,8 @@ func (s *btrfsSource) RemoveSnapshot(snapshot uback.Snapshot) error {
 	if s.snapshotsPath == "" {
 		return nil
 	}
-	args := []string{}
-	args = append(args, s.deleteCommand...)
-	args = append(args, path.Join(s.snapshotsPath, string(snapshot)))
-	cmd := exec.Command(args[0], args[1:]...)
-	cmd.Stdout = os.Stderr
-	cmd.Stderr = os.Stderr
-	btrfsLog.Printf("running %s", cmd.String())
-	return cmd.Run()
+	cmd := uback.BuildCommand(s.deleteCommand, path.Join(s.snapshotsPath, string(snapshot)))
+	return uback.RunCommand(btrfsLog, cmd)
 }
 
 // Part of uback.Source interface
@@ -118,14 +111,7 @@ func (s *btrfsSource) CreateBackup(baseSnapshot *uback.Snapshot) (uback.Backup, 
 		baseSnapshot = nil
 	}
 
-	args := []string{}
-	args = append(args, s.snapshotCommand...)
-	args = append(args, "-r", s.basePath, tmpSnapshotPath)
-	cmd := exec.Command(args[0], args[1:]...)
-	cmd.Stdout = os.Stderr
-	cmd.Stderr = os.Stderr
-	btrfsLog.Printf("running %s", cmd.String())
-	err := cmd.Run()
+	err := uback.RunCommand(btrfsLog, uback.BuildCommand(s.snapshotCommand, "-r", s.basePath, tmpSnapshotPath))
 	if err != nil {
 		return uback.Backup{}, nil, err
 	}
@@ -133,18 +119,14 @@ func (s *btrfsSource) CreateBackup(baseSnapshot *uback.Snapshot) (uback.Backup, 
 	backup := uback.Backup{Snapshot: uback.Snapshot(snapshot), BaseSnapshot: baseSnapshot}
 	btrfsLog.Printf("creating backup: %s", backup.Filename())
 
-	args = nil
-	args = append(args, s.sendCommand...)
+	args := []string{}
 	if baseSnapshot != nil {
 		args = append(args, "-p", path.Join(s.snapshotsPath, baseSnapshot.Name()))
 	}
 	args = append(args, tmpSnapshotPath)
-	return uback.WrapSourceCommand(backup, exec.Command(args[0], args[1:]...), func(err error) error {
+	return uback.WrapSourceCommand(backup, uback.BuildCommand(s.sendCommand, args...), func(err error) error {
 		if err != nil || s.snapshotsPath == "" {
-			args = nil
-			args = append(args, s.deleteCommand...)
-			args = append(args, tmpSnapshotPath)
-			_ = exec.Command(args[0], args[1:]...).Run()
+			_ = uback.RunCommand(btrfsLog, uback.BuildCommand(s.deleteCommand, tmpSnapshotPath))
 			return err
 		}
 		if s.snapshotsPath != "" {
@@ -156,15 +138,9 @@ func (s *btrfsSource) CreateBackup(baseSnapshot *uback.Snapshot) (uback.Backup, 
 
 // Part of uback.Source interface
 func (s *btrfsSource) RestoreBackup(targetDir string, backup uback.Backup, data io.Reader) error {
-	args := []string{}
-	args = append(args, s.receiveCommand...)
-	args = append(args, targetDir)
-	cmd := exec.Command(args[0], args[1:]...)
-	btrfsLog.Printf("running %s", cmd.String())
+	cmd := uback.BuildCommand(s.receiveCommand, targetDir)
 	cmd.Stdin = data
-	cmd.Stdout = os.Stderr
-	cmd.Stderr = os.Stderr
-	err := cmd.Run()
+	err := uback.RunCommand(btrfsLog, cmd)
 	if err != nil {
 		return err
 	}

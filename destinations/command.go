@@ -49,7 +49,6 @@ func newCommandDestination(options *uback.Options) (uback.Destination, error) {
 	buf := bytes.NewBuffer(nil)
 	cmd := uback.BuildCommand(command, "destination", "validate-options")
 	cmd.Stdout = buf
-	cmd.Stderr = os.Stderr
 	cmd.Env = env
 	err := cmd.Run()
 	if err != nil {
@@ -65,9 +64,8 @@ func (d *commandDestination) ListBackups() ([]uback.Backup, error) {
 	buf := bytes.NewBuffer(nil)
 	cmd := uback.BuildCommand(d.command, "destination", "list-backups")
 	cmd.Stdout = buf
-	cmd.Stderr = os.Stderr
 	cmd.Env = d.env
-	err := cmd.Run()
+	err := uback.RunCommand(commandLog, cmd)
 	if err != nil {
 		return nil, err
 	}
@@ -106,30 +104,23 @@ func (d *commandDestination) ListBackups() ([]uback.Backup, error) {
 
 func (d *commandDestination) RemoveBackup(backup uback.Backup) error {
 	cmd := uback.BuildCommand(d.command, "destination", "remove-backup", backup.FullName())
-	cmd.Stdout = os.Stderr
-	cmd.Stderr = os.Stderr
 	cmd.Env = d.env
-	return cmd.Run()
+	return uback.RunCommand(commandLog, cmd)
 }
 
 func (d *commandDestination) SendBackup(backup uback.Backup, data io.Reader) error {
 	cmd := uback.BuildCommand(d.command, "destination", "send-backup", backup.FullName())
 	cmd.Stdin = data
-	cmd.Stdout = os.Stderr
-	cmd.Stderr = os.Stderr
 	cmd.Env = d.env
-	return cmd.Run()
+	return uback.RunCommand(commandLog, cmd)
 }
 
 func (d *commandDestination) ReceiveBackup(backup uback.Backup) (io.ReadCloser, error) {
 	pr, pw := io.Pipe()
 	cmd := uback.BuildCommand(d.command, "destination", "receive-backup", backup.FullName())
 	cmd.Stdout = pw
-	cmd.Stderr = os.Stderr
 	cmd.Env = d.env
-
-	commandLog.Printf("running: %v", cmd.String())
-	err := cmd.Start()
+	err := uback.StartCommand(commandLog, cmd)
 	if err != nil {
 		return nil, err
 	}

@@ -103,10 +103,6 @@ func (s *tarSource) CreateBackup(baseSnapshot *uback.Snapshot) (uback.Backup, io
 		baseSnapshot = nil
 	}
 
-	command := make([]string, 0, len(s.command)+5)
-	command = append(command, s.command...)
-	command = append(command, []string{"--create", "-C", s.basePath}...)
-
 	if baseSnapshot != nil {
 		err := uback.CopyFile(tmpSnapshotPath, path.Join(s.snapshotsPath, baseSnapshot.Name()))
 		if err != nil {
@@ -119,11 +115,12 @@ func (s *tarSource) CreateBackup(baseSnapshot *uback.Snapshot) (uback.Backup, io
 	backup := uback.Backup{Snapshot: uback.Snapshot(snapshot), BaseSnapshot: baseSnapshot}
 	tarLog.Printf("creating backup: %s", backup.Filename())
 
+	args := []string{"--create", "-C", s.basePath}
 	if s.snapshotsPath != "" {
-		command = append(command, fmt.Sprintf("--listed-incremental=%s", tmpSnapshotPath))
+		args = append(args, fmt.Sprintf("--listed-incremental=%s", tmpSnapshotPath))
 	}
-	command = append(command, ".")
-	return uback.WrapSourceCommand(backup, exec.Command(command[0], command[1:]...), func(err error) error {
+	args = append(args, ".")
+	return uback.WrapSourceCommand(backup, uback.BuildCommand(s.command, args...), func(err error) error {
 		// For tar, exit code 1 is a warning, don't treat it as an error
 		if err != nil {
 			exitErr, ok := err.(*exec.ExitError)
@@ -158,9 +155,6 @@ func (s *tarSource) RestoreBackup(targetDir string, backup uback.Backup, data io
 	}
 
 	cmd := exec.Command("tar", "-x", "-C", path.Join(targetDir, backup.Snapshot.Name()))
-	tarLog.Printf("running %s", cmd.String())
 	cmd.Stdin = data
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
+	return uback.RunCommand(tarLog, cmd)
 }

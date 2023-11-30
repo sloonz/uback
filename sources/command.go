@@ -52,9 +52,8 @@ func newCommandSource(options *uback.Options) (uback.Source, string, error) {
 	buf := bytes.NewBuffer(nil)
 	cmd := uback.BuildCommand(command, "source", "type")
 	cmd.Stdout = buf
-	cmd.Stderr = os.Stderr
 	cmd.Env = env
-	err := cmd.Run()
+	err := uback.RunCommand(commandLog, cmd)
 	if err != nil {
 		return nil, "", err
 	}
@@ -81,9 +80,8 @@ func (s *commandSource) ListSnapshots() ([]uback.Snapshot, error) {
 	buf := bytes.NewBuffer(nil)
 	cmd := uback.BuildCommand(s.command, "source", "list-snapshots")
 	cmd.Stdout = buf
-	cmd.Stderr = os.Stderr
 	cmd.Env = s.env
-	err := cmd.Run()
+	err := uback.RunCommand(commandLog, cmd)
 	if err != nil {
 		return nil, err
 	}
@@ -122,10 +120,8 @@ func (s *commandSource) ListSnapshots() ([]uback.Snapshot, error) {
 // Part of uback.Source interface
 func (s *commandSource) RemoveSnapshot(snapshot uback.Snapshot) error {
 	cmd := uback.BuildCommand(s.command, "source", "remove-snapshot", snapshot.Name())
-	cmd.Stdout = os.Stderr
-	cmd.Stderr = os.Stderr
 	cmd.Env = s.env
-	return cmd.Run()
+	return uback.RunCommand(commandLog, cmd)
 }
 
 // Part of uback.Source interface
@@ -137,14 +133,10 @@ func (s *commandSource) CreateBackup(baseSnapshot *uback.Snapshot) (uback.Backup
 		cmd = uback.BuildCommand(s.command, "source", "create-backup")
 	}
 
-	commandLog.Printf("running: %v", cmd.String())
-
 	pr, pw := io.Pipe()
-
 	cmd.Stdout = pw
-	cmd.Stderr = os.Stderr
 	cmd.Env = s.env
-	err := cmd.Start()
+	err := uback.StartCommand(commandLog, cmd)
 	if err != nil {
 		return uback.Backup{}, nil, err
 	}
@@ -178,9 +170,6 @@ func (s *commandSource) RestoreBackup(targetDir string, backup uback.Backup, dat
 		cmd = uback.BuildCommand(s.command, "source", "restore-backup", targetDir, backup.Snapshot.Name())
 	}
 
-	commandLog.Printf("running: %v", cmd.String())
 	cmd.Stdin = data
-	cmd.Stdout = os.Stderr
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
+	return uback.RunCommand(commandLog, cmd)
 }

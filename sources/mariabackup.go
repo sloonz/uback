@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/exec"
 	"path"
 	"regexp"
 	"strings"
@@ -203,8 +202,8 @@ func (s *mariaBackupSource) CreateBackup(baseSnapshot *uback.Snapshot) (uback.Ba
 			return uback.Backup{}, nil, ErrParseMariadbVersion
 		}
 
-		cmd := exec.Command(mdbVersionCommand[0], mdbVersionCommand[1:]...)
-		cmd.Stderr = os.Stderr
+		cmd := uback.BuildCommand(mdbVersionCommand)
+		cmd.Stdout = nil
 		serverVersion, err = cmd.Output()
 		if err != nil {
 			return uback.Backup{}, nil, fmt.Errorf("cannot get mariadb server version: %v", err)
@@ -231,10 +230,10 @@ func (s *mariaBackupSource) CreateBackup(baseSnapshot *uback.Snapshot) (uback.Ba
 	backup := uback.Backup{Snapshot: uback.Snapshot(snapshot), BaseSnapshot: baseSnapshot}
 	mariaBackupLog.Printf("creating backup: %s", backup.Filename())
 
-	return uback.WrapSourceCommand(backup, exec.Command(command[0], command[1:]...), func(err error) error {
+	return uback.WrapSourceCommand(backup, uback.BuildCommand(command), func(err error) error {
 		if serverVersion != nil {
-			cmd := exec.Command(mdbVersionCommand[0], mdbVersionCommand[1:]...)
-			cmd.Stderr = os.Stderr
+			cmd := uback.BuildCommand(mdbVersionCommand)
+			cmd.Stdout = nil
 			newServerVersion, err := cmd.Output()
 			if err != nil {
 				return fmt.Errorf("cannot get mariadb server version: %v", err)
@@ -290,14 +289,10 @@ func (s *mariaBackupSource) RestoreBackup(targetDir string, backup uback.Backup,
 	if s.useDocker {
 		extractCommand = append(extractCommand, "docker", "run", "--rm", "-u", fmt.Sprintf("%d", os.Getuid()), "-v", fmt.Sprintf("%s:%s", targetDir, targetDir), "-i", "mariadb:latest")
 	}
-	extractCommand = append(extractCommand, "mbstream", "-x", "-C", restoreDir)
 
-	cmd := exec.Command(extractCommand[0], extractCommand[1:]...)
+	cmd := uback.BuildCommand(extractCommand, "mbstream", "-x", "-C", restoreDir)
 	cmd.Stdin = data
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	mariaBackupLog.Printf("running %v", cmd.String())
-	err = cmd.Run()
+	err = uback.RunCommand(mariaBackupLog, cmd)
 	if err != nil {
 		return err
 	}
@@ -322,13 +317,8 @@ func (s *mariaBackupSource) RestoreBackup(targetDir string, backup uback.Backup,
 
 	if backup.BaseSnapshot != nil {
 		baseDir := path.Join(targetDir, backup.BaseSnapshot.Name())
-		prepareCommand = append(prepareCommand, "--prepare", fmt.Sprintf("--target-dir=%s", baseDir), fmt.Sprintf("--incremental-dir=%s", restoreDir))
-		cmd = exec.Command(prepareCommand[0], prepareCommand[1:]...)
-		cmd.Stdin = nil
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		mariaBackupLog.Printf("running %v", cmd.String())
-		err = cmd.Run()
+		cmd = uback.BuildCommand(prepareCommand, "--prepare", fmt.Sprintf("--target-dir=%s", baseDir), fmt.Sprintf("--incremental-dir=%s", restoreDir))
+		err = uback.RunCommand(mariaBackupLog, cmd)
 		if err != nil {
 			return err
 		}
@@ -341,11 +331,6 @@ func (s *mariaBackupSource) RestoreBackup(targetDir string, backup uback.Backup,
 		return os.Rename(baseDir, restoreDir)
 	}
 
-	prepareCommand = append(prepareCommand, "--prepare", fmt.Sprintf("--target-dir=%s", restoreDir))
-	cmd = exec.Command(prepareCommand[0], prepareCommand[1:]...)
-	cmd.Stdin = nil
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	mariaBackupLog.Printf("running %v", cmd.String())
-	return cmd.Run()
+	cmd = uback.BuildCommand(prepareCommand, "--prepare", fmt.Sprintf("--target-dir=%s", restoreDir))
+	return uback.RunCommand(mariaBackupLog, cmd)
 }
