@@ -21,6 +21,8 @@ func New(options *uback.Options) (src uback.Source, typ string, err error) {
 		src, err = newMariaBackupSource(options)
 	case "command":
 		src, typ, err = newCommandSource(options)
+	case "proxy":
+		src, typ, err = newProxySource(options)
 	default:
 		return nil, "", fmt.Errorf("invalid source type %v", options.String["Type"])
 	}
@@ -36,6 +38,8 @@ func NewForRestoration(options *uback.Options, typ string) (uback.Source, error)
 		return newTarSourceForRestoration()
 	case "mariabackup":
 		return newMariaBackupSourceForRestoration(options)
+	case "proxy":
+		return nil, ErrProxyNoRestoration
 	default:
 		if strings.HasPrefix(typ, "command:") {
 			command, err := shlex.Split(typ[len("command:"):])

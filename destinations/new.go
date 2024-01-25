@@ -16,6 +16,8 @@ func New(options *uback.Options) (uback.Destination, error) {
 		return newObjectStorageDestination(options)
 	case "command":
 		return newCommandDestination(options)
+	case "proxy":
+		return newProxyDestination(options)
 	default:
 		return nil, fmt.Errorf("invalid destination type %v", options.String["Type"])
 	}

@@ -54,7 +54,7 @@ func init() {
 	})
 
 	rootCmd.PersistentFlags().StringVarP(&presetsDir, "presets-dir", "p", "", "path to presets directory")
-	rootCmd.AddCommand(cmdPreset, cmdBackup, cmdKey, cmdContainer, cmdList, cmdPrune, cmdFetch, cmdRestore, cmdVersion)
+	rootCmd.AddCommand(cmdPreset, cmdBackup, cmdKey, cmdContainer, cmdList, cmdPrune, cmdFetch, cmdRestore, cmdVersion, cmdProxy)
 }
 
 func Execute() {
