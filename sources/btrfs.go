@@ -138,7 +138,6 @@ func (s *btrfsSource) CreateBackup(baseSnapshot *uback.Snapshot) (uback.Backup, 
 		}
 	}
 
-
 	if s.snapshotsPath == "" {
 		baseSnapshot = nil
 	}

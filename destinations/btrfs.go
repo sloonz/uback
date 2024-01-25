@@ -45,7 +45,7 @@ func newBtrfsDestination(options *uback.Options) (uback.Destination, error) {
 		basePath:        basePath,
 		snapshotCommand: options.GetCommand("SnapshotCommand", []string{"btrfs", "subvolume", "snapshot"}),
 		sendCommand:     options.GetCommand("SendCommand", []string{"btrfs", "send"}),
-		receiveCommand:  options.GetCommand("ReceiveCommand", []string{"btrfs", "subvolume", "receive"}),
+		receiveCommand:  options.GetCommand("ReceiveCommand", []string{"btrfs", "receive"}),
 		deleteCommand:   options.GetCommand("DeleteCommand", []string{"btrfs", "subvolume", "delete"}),
 	}, nil
 }
