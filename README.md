@@ -90,11 +90,15 @@ format and keys format.
 
 * [x] Fix a compatibility issue with MariaDB 11
 
-### 0.5
+### 0.5 (released)
 
-* [ ] Proxy support
+* [x] Proxy support
 
 ### 0.6
+
+* [ ] FTP/SFTP support
+
+### 0.7
 
 * [ ] Should be suitable for production
 
