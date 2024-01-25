@@ -101,7 +101,7 @@ func (s *proxySource) CreateBackup(baseSnapshot *uback.Snapshot) (uback.Backup, 
 	}
 
 	var backup uback.Backup
-	err = rpcClient.Call("Source.CreateBackup", &CreateBackupArgs{Options: uback.ProxiedOptions(s.options)}, &backup)
+	err = rpcClient.Call("Source.CreateBackup", &CreateBackupArgs{Options: uback.ProxiedOptions(s.options), Snapshot: baseSnapshot}, &backup)
 	if err != nil {
 		return uback.Backup{}, nil, err
 	}

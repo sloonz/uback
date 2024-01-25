@@ -30,6 +30,7 @@ type btrfsSource struct {
 	sendCommand     []string
 	receiveCommand  []string
 	deleteCommand   []string
+	reuseSnapshots  int
 }
 
 func newBtrfsSource(options *uback.Options) (uback.Source, error) {
@@ -48,6 +49,15 @@ func newBtrfsSource(options *uback.Options) (uback.Source, error) {
 		return nil, ErrTarPath
 	}
 
+	var reuseSnapshots int
+	if options.String["ReuseSnapshots"] != "" {
+		var err error
+		reuseSnapshots, err = uback.ParseInterval(options.String["ReuseSnapshots"])
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return &btrfsSource{
 		options:         options,
 		snapshotsPath:   snapshotsPath,
@@ -55,6 +65,7 @@ func newBtrfsSource(options *uback.Options) (uback.Source, error) {
 		snapshotCommand: options.GetCommand("SnapshotCommand", []string{"btrfs", "subvolume", "snapshot"}),
 		sendCommand:     options.GetCommand("SendCommand", []string{"btrfs", "send"}),
 		deleteCommand:   options.GetCommand("DeleteCommand", []string{"btrfs", "subvolume", "delete"}),
+		reuseSnapshots:  reuseSnapshots,
 	}, nil
 }
 
@@ -104,20 +115,44 @@ func (s *btrfsSource) RemoveSnapshot(snapshot uback.Snapshot) error {
 // Part of uback.Source interface
 func (s *btrfsSource) CreateBackup(baseSnapshot *uback.Snapshot) (uback.Backup, io.ReadCloser, error) {
 	snapshot := time.Now().UTC().Format(uback.SnapshotTimeFormat)
-	tmpSnapshotPath := path.Join(s.snapshotsPath, fmt.Sprintf("_tmp-%s", snapshot))
 	finalSnapshotPath := path.Join(s.snapshotsPath, snapshot)
+	tmpSnapshotPath := path.Join(s.snapshotsPath, fmt.Sprintf("_tmp-%s", snapshot))
+
+	if s.reuseSnapshots != 0 {
+		snapshots, err := uback.SortedListSnapshots(s)
+		if err != nil {
+			return uback.Backup{}, nil, err
+		}
+
+		if len(snapshots) > 0 {
+			t, err := snapshots[0].Time()
+			if err != nil {
+				return uback.Backup{}, nil, err
+			}
+
+			if time.Now().UTC().Sub(t).Seconds() <= float64(s.reuseSnapshots) {
+				snapshot = string(snapshots[0])
+				finalSnapshotPath = path.Join(s.snapshotsPath, snapshot)
+				tmpSnapshotPath = finalSnapshotPath
+			}
+		}
+	}
+
 
 	if s.snapshotsPath == "" {
 		baseSnapshot = nil
 	}
 
-	err := uback.RunCommand(btrfsLog, uback.BuildCommand(s.snapshotCommand, "-r", s.basePath, tmpSnapshotPath))
-	if err != nil {
-		return uback.Backup{}, nil, err
-	}
-
 	backup := uback.Backup{Snapshot: uback.Snapshot(snapshot), BaseSnapshot: baseSnapshot}
-	btrfsLog.Printf("creating backup: %s", backup.Filename())
+	if tmpSnapshotPath != finalSnapshotPath {
+		err := uback.RunCommand(btrfsLog, uback.BuildCommand(s.snapshotCommand, "-r", s.basePath, tmpSnapshotPath))
+		if err != nil {
+			return uback.Backup{}, nil, err
+		}
+		btrfsLog.Printf("creating backup: %s", backup.Filename())
+	} else {
+		btrfsLog.Printf("reusing backup: %s", backup.Filename())
+	}
 
 	args := []string{}
 	if baseSnapshot != nil {
@@ -129,7 +164,7 @@ func (s *btrfsSource) CreateBackup(baseSnapshot *uback.Snapshot) (uback.Backup, 
 			_ = uback.RunCommand(btrfsLog, uback.BuildCommand(s.deleteCommand, tmpSnapshotPath))
 			return err
 		}
-		if s.snapshotsPath != "" {
+		if tmpSnapshotPath != finalSnapshotPath {
 			return os.Rename(tmpSnapshotPath, finalSnapshotPath)
 		}
 		return nil
