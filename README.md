@@ -30,8 +30,9 @@ source allow it) and retention policy.
 All the documentation is in the [doc/](doc/) directory. You should start
 by the [tutorial](doc/tutorial.md) and then jump to advanced topics ([file
 format](doc/file-format.md), [custom sources](doc/custom-sources.md),
-[custom destinations](doc/custom-destinations.md)) or the documentation
-specific to each source or destination.
+[custom destinations](doc/custom-destinations.md),
+[proxying](doc/proxy.md)) or the documentation specific to each source
+or destination.
 
 ## Supported Sources
 
