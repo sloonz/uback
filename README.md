@@ -95,11 +95,15 @@ format and keys format.
 
 * [x] Proxy support
 
-### 0.6
+### 0.6 (released)
+
+* [x] Allow multiple public keys per backup
+
+### 0.7
 
 * [ ] FTP/SFTP support
 
-### 0.7
+### 0.8
 
 * [ ] Should be suitable for production
 
