@@ -15,7 +15,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func restore(dst uback.Destination, b uback.Backup, sk age.Identity, targetDir string) error {
+func restore(dst uback.Destination, b uback.Backup, sk []age.Identity, targetDir string) error {
 	logrus.Printf("restoring %v onto %v", b.Filename(), targetDir)
 
 	srcOpts, err := uback.EvalOptions(uback.SplitOptions(cmdRestoreSourceOptions), presets)
@@ -74,7 +74,7 @@ var (
 
 			dstOpts := newOptionsBuilder(uback.EvalOptions(uback.SplitOptions(args[0]), presets)).
 				WithDestination().
-				WithPrivateKey().
+				WithIdentities().
 				FatalOnError()
 
 			backups, err := uback.SortedListBackups(dstOpts.Destination)
@@ -99,7 +99,7 @@ var (
 			}
 
 			for i := len(fetchedBackups) - 1; i >= 0; i-- {
-				err = restore(dstOpts.Destination, fetchedBackups[i], dstOpts.PrivateKey, cmdRestoreTargetDir)
+				err = restore(dstOpts.Destination, fetchedBackups[i], dstOpts.Identities, cmdRestoreTargetDir)
 				if err != nil {
 					logrus.Fatal(err)
 				}

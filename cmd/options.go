@@ -19,8 +19,8 @@ type optionsBuilder struct {
 	SourceType        string
 	Destination       uback.Destination
 	RetentionPolicies []uback.RetentionPolicy
-	PrivateKey        age.Identity
-	PublicKey         age.Recipient
+	Identities        []age.Identity
+	Recipients        []age.Recipient
 	Error             error
 }
 
@@ -42,23 +42,23 @@ func (o *optionsBuilder) WithDestination() *optionsBuilder {
 	return o
 }
 
-func (o *optionsBuilder) WithPublicKey() *optionsBuilder {
+func (o *optionsBuilder) WithRecipients() *optionsBuilder {
 	if o.Error == nil {
 		if o.Options.String["NoEncryption"] != "" {
-			o.PublicKey = nil
+			o.Recipients = nil
 		} else {
-			o.PublicKey, o.Error = uback.LoadPublicKey(o.Options.String["KeyFile"], o.Options.String["Key"])
+			o.Recipients, o.Error = uback.LoadRecipients(o.Options.String["KeyFile"], o.Options.String["Key"])
 		}
 	}
 	return o
 }
 
-func (o *optionsBuilder) WithPrivateKey() *optionsBuilder {
+func (o *optionsBuilder) WithIdentities() *optionsBuilder {
 	if o.Error == nil {
 		if o.Options.String["NoEncryption"] != "" {
-			o.PrivateKey = nil
+			o.Identities = nil
 		} else {
-			o.PrivateKey, o.Error = uback.LoadPrivateKey(o.Options.String["KeyFile"], o.Options.String["Key"])
+			o.Identities, o.Error = uback.LoadIdentities(o.Options.String["KeyFile"], o.Options.String["Key"])
 		}
 	}
 	return o

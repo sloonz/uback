@@ -200,7 +200,7 @@ func GetFullChain(backup Backup, index map[string]Backup) ([]Backup, bool) {
 }
 
 // Load a private key either from a file (if keyFile argument is provided), or from its content (key argument)
-func LoadPrivateKey(keyFile, key string) (age.Identity, error) {
+func LoadIdentities(keyFile, key string) ([]age.Identity, error) {
 	if keyFile != "" && key != "" {
 		return nil, fmt.Errorf("must provide one of key file or key, not both")
 	}
@@ -214,22 +214,12 @@ func LoadPrivateKey(keyFile, key string) (age.Identity, error) {
 		key = string(keyData)
 	}
 
-	identities, err := age.ParseIdentities(bytes.NewBufferString(key))
-	if err != nil {
-		return nil, err
-	}
-
-	identity, ok := identities[0].(*age.X25519Identity)
-	if !ok {
-		return nil, fmt.Errorf("only x25519 age keys are supported")
-	}
-
-	return identity, nil
+	return age.ParseIdentities(bytes.NewBufferString(key))
 }
 
 // Load a public key either from a file (if keyFile argument is provided), or from its content (key argument)
 // If the file or the content represents a private key, derive the public key from it
-func LoadPublicKey(keyFile, key string) (age.Recipient, error) {
+func LoadRecipients(keyFile, key string) ([]age.Recipient, error) {
 	if keyFile != "" && key != "" {
 		return nil, fmt.Errorf("must provide one of key file or key, not both")
 	}
@@ -243,27 +233,7 @@ func LoadPublicKey(keyFile, key string) (age.Recipient, error) {
 		key = string(keyData)
 	}
 
-	recipients, err := age.ParseRecipients(bytes.NewBufferString(key))
-	if err != nil {
-		identities, err2 := age.ParseIdentities(bytes.NewBufferString(key))
-		if err2 != nil {
-			return nil, err
-		}
-
-		identity, ok := identities[0].(*age.X25519Identity)
-		if !ok {
-			return nil, err
-		}
-
-		return identity.Recipient(), nil
-	}
-
-	recipient, ok := recipients[0].(*age.X25519Recipient)
-	if !ok {
-		return nil, fmt.Errorf("only x25519 age keys are supported")
-	}
-
-	return recipient, nil
+	return age.ParseRecipients(bytes.NewBufferString(key))
 }
 
 func BuildCommand(command []string, additionalArgs ...string) *exec.Cmd {

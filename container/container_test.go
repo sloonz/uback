@@ -25,7 +25,7 @@ func TestReadWriter(t *testing.T) {
 		"It is one of the fastest ECC curves and is not covered by any known patents."
 
 	buf := bytes.NewBuffer(nil)
-	w, err := NewWriter(buf, pk, "test", 3)
+	w, err := NewWriter(buf, []age.Recipient{pk}, "test", 3)
 	if err != nil {
 		t.Errorf("cannot create writer: %v", err)
 		return
@@ -56,7 +56,7 @@ func TestReadWriter(t *testing.T) {
 		return
 	}
 
-	err = r.Unseal(sk)
+	err = r.Unseal([]age.Identity{sk})
 	if err != nil {
 		t.Errorf("cannot unseal reader: %v", err)
 	}
@@ -100,7 +100,7 @@ func TestAgeZstd(t *testing.T) {
 		return
 	}
 
-	err = r.Unseal(identities[0])
+	err = r.Unseal(identities)
 	if err != nil {
 		t.Error(err)
 		return
@@ -137,7 +137,7 @@ func TestTamperedHeader(t *testing.T) {
 		return
 	}
 
-	err = r.Unseal(identities[0])
+	err = r.Unseal(identities)
 	if !errors.Is(err, ErrInvalidHeaderHash) {
 		t.Errorf("expected ErrInvalidHeaderHash, got %v", err)
 		return
@@ -161,7 +161,7 @@ func TestTamperedPayload(t *testing.T) {
 		return
 	}
 
-	err = r.Unseal(identities[0])
+	err = r.Unseal(identities)
 	if err != nil {
 		t.Error(err)
 		return

@@ -29,13 +29,13 @@ type Writer struct {
 	zw *zstd.Encoder
 }
 
-func NewWriter(w io.Writer, pk age.Recipient, typ string, compressionLevel int) (*Writer, error) {
+func NewWriter(w io.Writer, recipients []age.Recipient, typ string, compressionLevel int) (*Writer, error) {
 	var aw io.WriteCloser
 	var zw *zstd.Encoder
 
 	hdr := bytes.NewBuffer(nil)
 	hdr.WriteString(magic)
-	if pk == nil {
+	if len(recipients) == 0 {
 		hdr.WriteString(fmt.Sprintf("type=%s,compression=zstd,plain=1\n", typ))
 	} else {
 		hdr.WriteString(fmt.Sprintf("type=%s,compression=zstd\n", typ))
@@ -45,13 +45,13 @@ func NewWriter(w io.Writer, pk age.Recipient, typ string, compressionLevel int) 
 		return nil, err
 	}
 
-	if pk == nil {
+	if len(recipients) == 0 {
 		zw, err = zstd.NewWriter(w, zstd.WithEncoderLevel(zstd.EncoderLevelFromZstd(compressionLevel)))
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		aw, err = age.Encrypt(w, pk)
+		aw, err = age.Encrypt(w, recipients...)
 		if err != nil {
 			return nil, err
 		}
@@ -138,10 +138,10 @@ func NewReader(r io.Reader) (*Reader, error) {
 }
 
 // Prepares the decryption process. This must be called before any Read() call
-func (r *Reader) Unseal(sk age.Identity) error {
+func (r *Reader) Unseal(identities []age.Identity) error {
 	var err error
 
-	if sk == nil {
+	if len(identities) == 0 {
 		if r.Options.String["Plain"] != "1" {
 			return errors.New("Encountered a encrypted backup, but a plaintext one was expected")
 		}
@@ -155,7 +155,7 @@ func (r *Reader) Unseal(sk age.Identity) error {
 			return errors.New("Encountered a plaintext backup, but secret key has been provided")
 		}
 
-		r.ar, err = age.Decrypt(r.br, sk)
+		r.ar, err = age.Decrypt(r.br, identities...)
 		if err != nil {
 			return err
 		}

@@ -26,7 +26,7 @@ var (
 			srcOpts := newOptionsBuilder(uback.EvalOptions(uback.SplitOptions(args[0]), presets)).
 				WithSource().
 				WithRetentionPolicies().
-				WithPublicKey().
+				WithRecipients().
 				WithStateFile().
 				FatalOnError()
 
@@ -114,7 +114,7 @@ var (
 
 			pr, pw := io.Pipe()
 			go func() {
-				cw, err := container.NewWriter(pw, srcOpts.PublicKey, srcOpts.SourceType, compressionLevel)
+				cw, err := container.NewWriter(pw, srcOpts.Recipients, srcOpts.SourceType, compressionLevel)
 				if err != nil {
 					pw.CloseWithError(err)
 					return

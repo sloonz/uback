@@ -73,7 +73,7 @@ var cmdContainerExtract = &cobra.Command{
 			logrus.Fatal(err)
 		}
 
-		sk, err := uback.LoadPrivateKey(cmdContainerExtractKeyFile, cmdContainerExtractKey)
+		sk, err := uback.LoadIdentities(cmdContainerExtractKeyFile, cmdContainerExtractKey)
 		if err != nil {
 			logrus.Fatal(err)
 		}
@@ -123,7 +123,7 @@ var cmdContainerCreate = &cobra.Command{
 			defer out.Close()
 		}
 
-		pk, err := uback.LoadPublicKey(cmdContainerCreateKeyFile, cmdContainerCreateKey)
+		pk, err := uback.LoadRecipients(cmdContainerCreateKeyFile, cmdContainerCreateKey)
 		if err != nil {
 			logrus.Fatal(err)
 		}
