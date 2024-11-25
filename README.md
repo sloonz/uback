@@ -99,7 +99,7 @@ format and keys format.
 
 * [x] Allow multiple public keys per backup
 
-### 0.6.1
+### 0.6.1 (released)
 
 * [x] Object storage: allow to customize part size
 
