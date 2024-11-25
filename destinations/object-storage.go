@@ -23,10 +23,11 @@ var (
 )
 
 type objectStorageDestination struct {
-	options *uback.Options
-	prefix  string
-	bucket  string
-	client  *minio.Client
+	options  *uback.Options
+	prefix   string
+	bucket   string
+	client   *minio.Client
+	partSize uint64
 }
 
 func newObjectStorageDestination(options *uback.Options) (uback.Destination, error) {
@@ -40,6 +41,7 @@ func newObjectStorageDestination(options *uback.Options) (uback.Destination, err
 	accessKeyID := u.User.Username()
 	secretAccessKey, _ := u.User.Password()
 	bucket := u.Path
+	partSize := uint64(0)
 
 	if options.String["Secure"] != "" {
 		s, err := strconv.ParseBool(options.String["Secure"])
@@ -73,6 +75,15 @@ func newObjectStorageDestination(options *uback.Options) (uback.Destination, err
 	}
 	bucket = strings.Trim(bucket, "/")
 
+	if options.String["PartSize"] != "" {
+		ps, err := strconv.ParseUint(options.String["PartSize"], 10, 64)
+		if err != nil {
+			osLog.Warnf("cannot parse PartSize option: %v", err)
+		} else {
+			partSize = ps * 1024 * 1024
+		}
+	}
+
 	client, err := minio.New(endpoint, &minio.Options{
 		Creds:  credentials.NewStaticV4(accessKeyID, secretAccessKey, ""),
 		Secure: secure,
@@ -82,7 +93,7 @@ func newObjectStorageDestination(options *uback.Options) (uback.Destination, err
 		return nil, fmt.Errorf("failed to create object storage instance: %v", err)
 	}
 
-	return &objectStorageDestination{options: options, client: client, prefix: prefix, bucket: bucket}, nil
+	return &objectStorageDestination{options: options, client: client, prefix: prefix, bucket: bucket, partSize: partSize}, nil
 }
 
 func (d *objectStorageDestination) ListBackups() ([]uback.Backup, error) {
@@ -129,7 +140,7 @@ func (d *objectStorageDestination) RemoveBackup(backup uback.Backup) error {
 
 func (d *objectStorageDestination) SendBackup(backup uback.Backup, data io.Reader) error {
 	osLog.Printf("writing backup to %s", d.prefix+backup.Filename())
-	_, err := d.client.PutObject(context.Background(), d.bucket, d.prefix+backup.Filename(), data, -1, minio.PutObjectOptions{})
+	_, err := d.client.PutObject(context.Background(), d.bucket, d.prefix+backup.Filename(), data, -1, minio.PutObjectOptions{PartSize: d.partSize})
 	if err != nil {
 		d.client.RemoveObject(context.Background(), d.bucket, d.prefix+backup.Filename(), minio.RemoveObjectOptions{}) //nolint:errcheck
 		return fmt.Errorf("failed to write backup to object storage: %v", err)

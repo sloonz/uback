@@ -99,6 +99,10 @@ format and keys format.
 
 * [x] Allow multiple public keys per backup
 
+### 0.6.1
+
+* [x] Object storage: allow to customize part size
+
 ### 0.7
 
 * [ ] FTP/SFTP support
