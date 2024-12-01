@@ -4,6 +4,7 @@ import (
 	"github.com/sloonz/uback/lib"
 
 	"fmt"
+	"os"
 	"os/user"
 	"path"
 
@@ -13,6 +14,7 @@ import (
 
 var (
 	presetsDir string
+	logLevel   string
 	presets    map[string][]uback.KeyValuePair
 
 	tag       = "git"
@@ -45,6 +47,15 @@ func init() {
 			} else {
 				presetsDir = path.Join(usr.HomeDir, ".config", "uback", "presets")
 			}
+
+			if logLevel != "" {
+				level, err := logrus.ParseLevel(logLevel)
+				if err == nil {
+					logrus.SetLevel(level)
+				} else {
+					logrus.Warnf("Cannot set log level: %v", err)
+				}
+			}
 		}
 
 		presets, err = uback.ReadPresets(presetsDir)
@@ -54,6 +65,7 @@ func init() {
 	})
 
 	rootCmd.PersistentFlags().StringVarP(&presetsDir, "presets-dir", "p", "", "path to presets directory")
+	rootCmd.PersistentFlags().StringVarP(&logLevel, "log-level", "", os.Getenv("LOG_LEVEL"), "log level (trace, debug, info, warn, error)")
 	rootCmd.AddCommand(cmdPreset, cmdBackup, cmdKey, cmdContainer, cmdList, cmdPrune, cmdFetch, cmdRestore, cmdVersion, cmdProxy)
 }
 
