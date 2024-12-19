@@ -114,6 +114,7 @@ func (s *btrfsSource) RemoveSnapshot(snapshot uback.Snapshot) error {
 
 // Part of uback.Source interface
 func (s *btrfsSource) CreateBackup(baseSnapshot *uback.Snapshot) (uback.Backup, io.ReadCloser, error) {
+	reused := false
 	snapshot := time.Now().UTC().Format(uback.SnapshotTimeFormat)
 	finalSnapshotPath := path.Join(s.snapshotsPath, snapshot)
 	tmpSnapshotPath := path.Join(s.snapshotsPath, fmt.Sprintf("_tmp-%s", snapshot))
@@ -131,9 +132,10 @@ func (s *btrfsSource) CreateBackup(baseSnapshot *uback.Snapshot) (uback.Backup, 
 			}
 
 			if time.Now().UTC().Sub(t).Seconds() <= float64(s.reuseSnapshots) {
+				reused = true
 				snapshot = string(snapshots[0])
 				finalSnapshotPath = path.Join(s.snapshotsPath, snapshot)
-				tmpSnapshotPath = finalSnapshotPath
+				tmpSnapshotPath = path.Join(s.snapshotsPath, fmt.Sprintf("_tmp-%s", snapshot))
 			}
 		}
 	}
@@ -143,14 +145,18 @@ func (s *btrfsSource) CreateBackup(baseSnapshot *uback.Snapshot) (uback.Backup, 
 	}
 
 	backup := uback.Backup{Snapshot: uback.Snapshot(snapshot), BaseSnapshot: baseSnapshot}
-	if tmpSnapshotPath != finalSnapshotPath {
+	if reused {
+		err := uback.RunCommand(btrfsLog, uback.BuildCommand(s.snapshotCommand, "-r", finalSnapshotPath, tmpSnapshotPath))
+		if err != nil {
+			return uback.Backup{}, nil, err
+		}
+		btrfsLog.Printf("reusing backup: %s", backup.Filename())
+	} else {
 		err := uback.RunCommand(btrfsLog, uback.BuildCommand(s.snapshotCommand, "-r", s.basePath, tmpSnapshotPath))
 		if err != nil {
 			return uback.Backup{}, nil, err
 		}
 		btrfsLog.Printf("creating backup: %s", backup.Filename())
-	} else {
-		btrfsLog.Printf("reusing backup: %s", backup.Filename())
 	}
 
 	args := []string{}
@@ -163,10 +169,12 @@ func (s *btrfsSource) CreateBackup(baseSnapshot *uback.Snapshot) (uback.Backup, 
 			_ = uback.RunCommand(btrfsLog, uback.BuildCommand(s.deleteCommand, tmpSnapshotPath))
 			return err
 		}
-		if tmpSnapshotPath != finalSnapshotPath {
+		if reused {
+			cmd := uback.BuildCommand(s.deleteCommand, tmpSnapshotPath)
+			return uback.RunCommand(btrfsLog, cmd)
+		} else {
 			return os.Rename(tmpSnapshotPath, finalSnapshotPath)
 		}
-		return nil
 	})
 }
 

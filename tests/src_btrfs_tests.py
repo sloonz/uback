@@ -43,9 +43,9 @@ class SrcBtrfsTests(unittest.TestCase, SrcBaseTests):
         self._test_src(self.tmpdir, source, dest, "receive-command=sudo btrfs receive", test_ignore=False, test_delete=True)
 
     def test_btrfs_reuse_snapshots(self):
-        source = f"type=btrfs,path={self.tmpdir}/source,key-file={self.tmpdir}/backup.pub,state-file={self.tmpdir}/state.json,snapshots-path={self.tmpdir}/snapshots,full-interval=weekly," +\
+        source = f"type=btrfs,path={self.tmpdir}/source,no-encryption=1,state-file={self.tmpdir}/state.json,snapshots-path={self.tmpdir}/snapshots,full-interval=weekly," +\
             "send-command=sudo btrfs send,delete-command=sudo btrfs subvolume delete,reuse-snapshots=1d"
-        dest = f"type=fs,@retention-policy=daily=3,key-file={self.tmpdir}/backup.key"
+        dest = f"type=btrfs,@retention-policy=daily=3"
 
         ensure_dir(f"{self.tmpdir}/backups1")
         ensure_dir(f"{self.tmpdir}/backups2")
@@ -62,3 +62,6 @@ class SrcBtrfsTests(unittest.TestCase, SrcBaseTests):
         self.assertEqual(set(os.listdir(f"{self.tmpdir}/snapshots")), {s})
         with open(f"{self.tmpdir}/state.json") as fd:
             self.assertEqual(json.load(fd), {"test1": s, "test2": s})
+
+        subprocess.check_call(["sudo", "btrfs", "subvolume", "delete", f"{self.tmpdir}/backups1/{s}"])
+        subprocess.check_call(["sudo", "btrfs", "subvolume", "delete", f"{self.tmpdir}/backups2/{s}"])
