@@ -4,11 +4,10 @@ class DestBtrfsTests(unittest.TestCase, SrcBaseTests):
     def setUp(self):
         test_root = os.environ.get("UBACK_BTRFS_TEST_ROOT")
         if test_root is None:
-            self.tmpdir = None
-            return
+            raise unittest.SkipTest("UBACK_BTRFS_TEST_ROOT not set")
 
-        ensure_dir(test_root)
-        self.tmpdir = f"{test_root}/dest-test"
+        basetmpdir = tempfile.mkdtemp(dir=test_root)
+        self.tmpdir = f"{basetmpdir}/dest-test"
         if os.path.exists(self.tmpdir):
             raise Exception("UBACK_BTRFS_TEST_ROOT already exists")
 
@@ -17,9 +16,6 @@ class DestBtrfsTests(unittest.TestCase, SrcBaseTests):
         ensure_dir(f"{self.tmpdir}/snapshots")
 
     def tearDown(self):
-        if self.tmpdir is None:
-            return
-
         for s in os.listdir(f"{self.tmpdir}/backups"):
             subprocess.check_call(["sudo", "btrfs", "subvolume", "delete", f"{self.tmpdir}/backups/{s}"])
         for s in os.listdir(f"{self.tmpdir}/snapshots"):
@@ -38,9 +34,6 @@ class DestBtrfsTests(unittest.TestCase, SrcBaseTests):
             subprocess.check_call(["sudo", "btrfs", "subvolume", "delete", f"{d}/restore/{s}"])
 
     def test_btrfs_dest(self):
-        if self.tmpdir is None:
-            return
-
         source = f"type=btrfs,path={self.tmpdir}/source,no-encryption=1,state-file={self.tmpdir}/state.json,snapshots-path={self.tmpdir}/snapshots,full-interval=weekly," +\
             "send-command=sudo btrfs send,delete-command=sudo btrfs subvolume delete"
         dest = f"id=test,type=btrfs,path={self.tmpdir}/backups,no-encryption=1," +\

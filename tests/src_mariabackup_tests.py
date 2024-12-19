@@ -5,7 +5,7 @@ import re
 class SrcMariabackupTests(unittest.TestCase):
     def setUp(self):
         if os.getenv("SKIP_MARIADB_TESTS"):
-            return
+            raise unittest.SkipTest("UBACK_BTRFS_TEST_ROOT not set")
 
         self.tmpdir = tempfile.mkdtemp()
         os.mkdir(f"{self.tmpdir}/snapshots")
@@ -41,15 +41,9 @@ class SrcMariabackupTests(unittest.TestCase):
             f"command=docker exec -i {container} mariadb-backup -uroot -ptest,mariadb-command=docker exec -i {container} mariadb -uroot -ptest"
 
     def tearDown(self):
-        if os.getenv("SKIP_MARIADB_TESTS"):
-            return
-
         shutil.rmtree(self.tmpdir)
 
     def test_mariabackup_source(self):
-        if os.getenv("SKIP_MARIADB_TESTS"):
-            return
-
         container = None
         try:
             container = self._run_server("10.10")
