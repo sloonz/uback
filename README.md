@@ -103,6 +103,11 @@ format and keys format.
 
 * [x] Object storage: allow to customize part size
 
+### 0.6.2 (released)
+
+* [x] Fix an issue when a btrfs destination could not use a reused btrfs
+snapshot from a btrfs source
+
 ### 0.7
 
 * [ ] FTP/SFTP support
