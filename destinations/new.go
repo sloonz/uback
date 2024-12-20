@@ -12,6 +12,8 @@ func New(options *uback.Options) (uback.Destination, error) {
 		return newBtrfsDestination(options)
 	case "fs":
 		return newFSDestination(options)
+	case "ftp":
+		return newFTPDestination(options)
 	case "object-storage":
 		return newObjectStorageDestination(options)
 	case "command":
