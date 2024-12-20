@@ -44,6 +44,7 @@ incremental backups
 ## Supported Destinations
 
 * [fs](doc/dest-fs.md): local filesystem
+* [ftp](doc/dest-ftp.md): FTP server
 * [object-storage](doc/dest-object-storage.md): S3-compatible object
 storage
 * [btrfs](doc/dest-btrfs.md)
@@ -99,22 +100,9 @@ format and keys format.
 
 * [x] Allow multiple public keys per backup
 
-### 0.6.1 (released)
-
-* [x] Object storage: allow to customize part size
-
-### 0.6.2 (released)
-
-* [x] Fix an issue when a btrfs destination could not use a reused btrfs
-snapshot from a btrfs source
-
 ### 0.7
 
 * [ ] FTP/SFTP support
-
-### 0.8
-
-* [ ] Should be suitable for production
 
 ### 1.0
 
