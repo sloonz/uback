@@ -4,13 +4,18 @@ linters:
     - gofmt
     - gosec
     - revive
-run:
-  skip-files:
+issues:
+  exclude-files:
     - "secretstream/secretstream.go" 
     - "secretstream/secretstream_test.go" 
 linters-settings:
   errcheck:
-    exclude: .errcheck-exclude.cfg
+    exclude-functions:
+      - (*io.PipeReader).CloseWithError
+      - (*io.PipeWriter).CloseWithError
+      - encoding/binary.Write(*bytes.Buffer)
+      - (*github.com/spf13/cobra.Command).Help
+      - (*os.Process).Kill
   gosec:
     excludes:
       - G204
