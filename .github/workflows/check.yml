@@ -18,4 +18,5 @@ jobs:
       - uses: actions/setup-go@v4
         with:
           go-version: '^1.21.1'
+      - run: pip install pyftpdlib
       - run: make SKIP_MARIADB_TESTS=1 test
