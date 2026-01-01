@@ -1,7 +1,7 @@
 package sources
 
 import (
-	"github.com/sloonz/uback/lib"
+	uback "github.com/sloonz/uback/lib"
 
 	"errors"
 	"fmt"
@@ -36,7 +36,7 @@ type btrfsSource struct {
 func newBtrfsSource(options *uback.Options) (uback.Source, error) {
 	snapshotsPath := options.String["SnapshotsPath"]
 	if snapshotsPath == "" {
-		btrfsLog.Warnf("SnapshotsPath option missing, incremental backups will not impossible")
+		btrfsLog.Warnf("SnapshotsPath option missing, incremental backups will be impossible")
 	} else {
 		err := os.MkdirAll(snapshotsPath, 0777)
 		if err != nil {

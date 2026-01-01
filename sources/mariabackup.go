@@ -1,8 +1,6 @@
 package sources
 
 import (
-	"github.com/sloonz/uback/lib"
-
 	_ "embed" // required for go:embed
 	"errors"
 	"fmt"
@@ -14,6 +12,7 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
+	uback "github.com/sloonz/uback/lib"
 )
 
 var (
@@ -60,7 +59,7 @@ type mariaBackupSource struct {
 func newMariaBackupSource(options *uback.Options) (uback.Source, error) {
 	snapshotsPath := options.String["SnapshotsPath"]
 	if snapshotsPath == "" {
-		mariaBackupLog.Warnf("SnapshotsPath option missing, incremental backups will not impossible")
+		mariaBackupLog.Warnf("SnapshotsPath option missing, incremental backups will be impossible")
 	} else {
 		err := os.MkdirAll(snapshotsPath, 0777)
 		if err != nil {
