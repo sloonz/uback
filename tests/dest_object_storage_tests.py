@@ -2,19 +2,16 @@ from .common import *
 
 class DestObjectStorageTests(unittest.TestCase):
     def setUp(self):
-        subprocess.check_call(["docker", "network", "create", "--driver=bridge", "uback-minio-test-bridge"])
-        self.container = subprocess.check_output(["docker", "container", "create", "--network", "uback-minio-test-bridge", "-h", "uback-minio-test", "-p", "9000:9000", "minio/minio", "server", "/data"]).strip().decode()
-        subprocess.check_call(["docker", "container", "start", self.container])
+        self.container = subprocess.check_output(["podman", "run", "--rm", "-dp", "9000:9000", "docker.io/minio/minio", "server", "/data"]).strip().decode()
         for i in range(300):
-            if subprocess.run(["docker", "run", "--network", "uback-minio-test-bridge", "--entrypoint=/bin/sh", "-i", "minio/mc", "-c", "mc alias set minio http://uback-minio-test:9000 minioadmin minioadmin && mc mb minio/testbucket"]).returncode == 0:
+            if subprocess.run(["podman", "exec", self.container, "sh", "-c", "mc alias set minio http://localhost:9000 minioadmin minioadmin && mc mb minio/testbucket"]).returncode == 0:
                 break
             time.sleep(0.1)
         else:
             raise Exception("could not initialize minio")
 
     def tearDown(self):
-        subprocess.check_call(["docker", "container", "rm", "-f", self.container])
-        subprocess.check_call(["docker", "network", "rm", "uback-minio-test-bridge"])
+        subprocess.check_call(["podman", "stop", self.container])
 
     def test_os_destination(self):
         with tempfile.TemporaryDirectory() as d:

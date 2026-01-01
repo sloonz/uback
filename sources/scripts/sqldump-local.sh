@@ -5,7 +5,7 @@ set -xe
 datadir=$(realpath "$(dirname "$0")")
 socket=$(realpath "$datadir/../mysqld.sock")
 
-mariadbd --skip-grant-tables --skip-networking --datadir="$datadir" --socket="$socket" &
+mariadbd --skip-grant-tables --skip-networking --datadir="$datadir" --socket="$socket" --pid-file=/dev/null &
 pid=$!
 
 for i in $(seq 1 300) ; do

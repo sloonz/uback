@@ -23,8 +23,8 @@ var (
 		"source": "mariabackup",
 	})
 
-	//go:embed scripts/sqldump-docker.sh
-	mariaBackupDockerScript []byte
+	//go:embed scripts/sqldump-podman.sh
+	mariaBackupPodmanScript []byte
 
 	//go:embed scripts/sqldump-local.sh
 	mariaBackupLocalScript []byte
@@ -53,7 +53,7 @@ type mariaBackupSource struct {
 	mdbVersionCommand []string
 	authFileData      string
 	versionCheck      bool
-	useDocker         bool
+	usePodman         bool
 }
 
 func newMariaBackupSource(options *uback.Options) (uback.Source, error) {
@@ -110,12 +110,12 @@ func newMariaBackupSourceForRestoration(options *uback.Options) (uback.Source, e
 		return nil, ErrMariaBackupCommand
 	}
 
-	useDocker, err := options.GetBoolean("UseDocker", true)
+	usePodman, err := options.GetBoolean("UsePodman", true)
 	if err != nil {
 		return nil, err
 	}
 
-	return &mariaBackupSource{command: command, useDocker: useDocker}, nil
+	return &mariaBackupSource{command: command, usePodman: usePodman}, nil
 }
 
 // Part of uback.Source interface
@@ -274,9 +274,9 @@ func (s *mariaBackupSource) RestoreBackup(targetDir string, backup uback.Backup,
 		return err
 	}
 
-	err = os.WriteFile(path.Join(restoreDir, "sqldump-docker.sh"), mariaBackupDockerScript, 0777)
+	err = os.WriteFile(path.Join(restoreDir, "sqldump-podman.sh"), mariaBackupPodmanScript, 0777)
 	if err != nil {
-		mariaBackupLog.Warnf("cannot write sqldump-docker.sh script: %v", err)
+		mariaBackupLog.Warnf("cannot write sqldump-podman.sh script: %v", err)
 	}
 
 	err = os.WriteFile(path.Join(restoreDir, "sqldump-local.sh"), mariaBackupLocalScript, 0777)
@@ -285,8 +285,8 @@ func (s *mariaBackupSource) RestoreBackup(targetDir string, backup uback.Backup,
 	}
 
 	var extractCommand []string
-	if s.useDocker {
-		extractCommand = append(extractCommand, "docker", "run", "--rm", "-u", fmt.Sprintf("%d", os.Getuid()), "-v", fmt.Sprintf("%s:%s", targetDir, targetDir), "-i", "mariadb:latest")
+	if s.usePodman {
+		extractCommand = append(extractCommand, "podman", "run", "--rm", "-v", fmt.Sprintf("%s:%s", targetDir, targetDir), "-i", "docker.io/library/mariadb:latest")
 	}
 
 	cmd := uback.BuildCommand(extractCommand, "mbstream", "-x", "-C", restoreDir)
@@ -297,7 +297,7 @@ func (s *mariaBackupSource) RestoreBackup(targetDir string, backup uback.Backup,
 	}
 
 	var prepareCommand []string
-	if s.useDocker {
+	if s.usePodman {
 		info, err := readBackupInfo(restoreDir)
 		if err != nil {
 			return err
@@ -309,7 +309,7 @@ func (s *mariaBackupSource) RestoreBackup(targetDir string, backup uback.Backup,
 		}
 
 		version := string(versionMatch[1])
-		prepareCommand = append(prepareCommand, "docker", "run", "--rm", "-u", fmt.Sprintf("%d", os.Getuid()), "-v", fmt.Sprintf("%v:%v", targetDir, targetDir), "-i", fmt.Sprintf("mariadb:%s", version), "mariadb-backup")
+		prepareCommand = append(prepareCommand, "podman", "run", "--rm", "-v", fmt.Sprintf("%v:%v", targetDir, targetDir), "-i", fmt.Sprintf("docker.io/library/mariadb:%s", version), "mariadb-backup")
 	} else {
 		prepareCommand = append(prepareCommand, s.command...)
 	}

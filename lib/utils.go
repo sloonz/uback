@@ -237,10 +237,8 @@ func LoadRecipients(keyFile, key string) ([]age.Recipient, error) {
 }
 
 func BuildCommand(command []string, additionalArgs ...string) *exec.Cmd {
-	fullArgs := make([]string, 0, len(command)+len(additionalArgs)-1)
-	fullArgs = append(fullArgs, command[1:]...)
-	fullArgs = append(fullArgs, additionalArgs...)
-	cmd := exec.Command(command[0], fullArgs...)
+	fullArgs := append(append([]string{}, command...), additionalArgs...)
+	cmd := exec.Command(fullArgs[0], fullArgs[1:]...)
 	cmd.Stdout = os.Stderr // default stdout to stderr because we don't want other processes to output stuff on our output
 	cmd.Stderr = os.Stderr
 	return cmd
