@@ -31,7 +31,7 @@ We can now create our encrypted backup :
 
 ```
 $ uback backup type=tar,path=/tmp/etc,key-file=backup.pub type=fs,path=/tmp/my-backups/etc/
-WARN[0000] SnapshotsPath option missing, incremental backups will not impossible  source=tar
+WARN[0000] SnapshotsPath option missing, incremental backups will be impossible  source=tar
 WARN[0000] StateFile option missing, full backup forced 
 INFO[0000] creating backup: 20210515T124130.706-full.ubkp  source=tar
 INFO[0000] running: /usr/bin/tar --create -C /tmp/etc . 
@@ -91,7 +91,7 @@ hello
 Let’s go back to the two warnings we got in the previous section :
 
 ```
-WARN[0000] SnapshotsPath option missing, incremental backups will not impossible  source=tar
+WARN[0000] SnapshotsPath option missing, incremental backups will be impossible  source=tar
 WARN[0000] StateFile option missing, full backup forced 
 ```
 
