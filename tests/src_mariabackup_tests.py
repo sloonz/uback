@@ -1,6 +1,7 @@
 from .common import *
 
 import re
+import sys
 
 class SrcMariabackupTests(unittest.TestCase):
     def setUp(self):
@@ -88,6 +89,19 @@ class SrcMariabackupTests(unittest.TestCase):
             source = self._get_source(container)
             subprocess.check_call([uback, "backup", "-n", source, dest])
             self.assertTrue(list(sorted(os.listdir(f"{self.tmpdir}/backups")))[-1].endswith("-full.ubkp"))
+
+            # Test mariadb 12 compatibility
+            subprocess.check_call(["podman", "stop", container])
+            container = None
+            container = self._run_server("12.0")
+            self._wait_for_server(container)
+            source = self._get_source(container)
+            subprocess.check_call([uback, "backup", "-n", source, dest])
+            subprocess.check_call([uback, "restore", "-d", f"{self.tmpdir}/restore", dest])
+            restore_path = os.listdir(f"{self.tmpdir}/restore")[0]
+            out = subprocess.check_output([f"{self.tmpdir}/restore/{restore_path}/sqldump-podman.sh", "ubkptest"])
+            self.assertTrue(re.search(b"(?ms)INSERT INTO `test` VALUES\\s+\\(4\\),\\s*\\(3\\);", out))
+            subprocess.check_call(["podman", "unshare", "rm", "-rf", f"{self.tmpdir}/restore"])
         finally:
             if container:
                 subprocess.check_call(["podman", "stop", container])
