@@ -1,7 +1,7 @@
 package sources
 
 import (
-	"github.com/sloonz/uback/lib"
+	uback "github.com/sloonz/uback/lib"
 
 	"bufio"
 	"bytes"
@@ -75,10 +75,9 @@ func newCommandSourceForRestoration(command []string, options *uback.Options) (u
 	return &commandSource{command: command, options: options}, nil
 }
 
-// Part of uback.Source interface
-func (s *commandSource) ListSnapshots() ([]uback.Snapshot, error) {
+func (s *commandSource) listSnapshots(kind string) ([]uback.Snapshot, error) {
 	buf := bytes.NewBuffer(nil)
-	cmd := uback.BuildCommand(s.command, "source", "list-snapshots")
+	cmd := uback.BuildCommand(s.command, "source", "list-"+kind)
 	cmd.Stdout = buf
 	cmd.Env = s.env
 	err := uback.RunCommand(commandLog, cmd)
@@ -118,8 +117,25 @@ func (s *commandSource) ListSnapshots() ([]uback.Snapshot, error) {
 }
 
 // Part of uback.Source interface
-func (s *commandSource) RemoveSnapshot(snapshot uback.Snapshot) error {
-	cmd := uback.BuildCommand(s.command, "source", "remove-snapshot", snapshot.Name())
+func (s *commandSource) ListArchives() ([]uback.Snapshot, error) {
+	return s.listSnapshots("archives")
+}
+
+// Part of uback.Source interface
+func (s *commandSource) ListBookmarks() ([]uback.Snapshot, error) {
+	return s.listSnapshots("bookmarks")
+}
+
+// Part of uback.Source interface
+func (s *commandSource) RemoveArchive(snapshot uback.Snapshot) error {
+	cmd := uback.BuildCommand(s.command, "source", "remove-archive", snapshot.Name())
+	cmd.Env = s.env
+	return uback.RunCommand(commandLog, cmd)
+}
+
+// Part of uback.Source interface
+func (s *commandSource) RemoveBookmark(snapshot uback.Snapshot) error {
+	cmd := uback.BuildCommand(s.command, "source", "remove-bookmark", snapshot.Name())
 	cmd.Env = s.env
 	return uback.RunCommand(commandLog, cmd)
 }

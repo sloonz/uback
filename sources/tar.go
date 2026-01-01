@@ -1,7 +1,7 @@
 package sources
 
 import (
-	"github.com/sloonz/uback/lib"
+	uback "github.com/sloonz/uback/lib"
 
 	"errors"
 	"fmt"
@@ -56,7 +56,12 @@ func newTarSourceForRestoration() (uback.Source, error) {
 }
 
 // Part of uback.Source interface
-func (s *tarSource) ListSnapshots() ([]uback.Snapshot, error) {
+func (s *tarSource) ListArchives() ([]uback.Snapshot, error) {
+	return nil, nil
+}
+
+// Part of uback.Source interface
+func (s *tarSource) ListBookmarks() ([]uback.Snapshot, error) {
 	if s.snapshotsPath == "" {
 		return nil, nil
 	}
@@ -86,7 +91,12 @@ func (s *tarSource) ListSnapshots() ([]uback.Snapshot, error) {
 }
 
 // Part of uback.Source interface
-func (s *tarSource) RemoveSnapshot(snapshot uback.Snapshot) error {
+func (s *tarSource) RemoveArchive(snapshot uback.Snapshot) error {
+	panic("should never happen")
+}
+
+// Part of uback.Source interface
+func (s *tarSource) RemoveBookmark(snapshot uback.Snapshot) error {
 	if s.snapshotsPath == "" {
 		return nil
 	}

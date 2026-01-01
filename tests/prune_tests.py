@@ -1,12 +1,17 @@
+import os
 from .common import *
 
 class PruneTests(unittest.TestCase):
+    def setUp(self):
+        os.environ["PATH"] = ":".join((str(tests_path), os.environ["PATH"]))
+        os.environ["tar_snapshots_kind"] = "archives"
+
     def test_manual_pruning(self):
         with tempfile.TemporaryDirectory() as d:
             check_call([uback, "key", "gen", f"{d}/backup.key", f"{d}/backup.pub"])
             os.mkdir(f"{d}/snapshots")
             os.mkdir(f"{d}/backups")
-            source = f"type=tar,path={d}/source,key-file={d}/backup.pub,state-file={d}/state.json,snapshots-path={d}/snapshots,full-interval=weekly"
+            source = f"type=command,command=uback-tar-src,path={d}/source,key-file={d}/backup.pub,state-file={d}/state.json,snapshots-path={d}/snapshots,full-interval=weekly"
             dest = f"id=test,type=fs,path={d}/backups,@retention-policy=daily=3"
 
             pathlib.Path(f"{d}/snapshots/20210101T000000.000").touch()
@@ -23,7 +28,7 @@ class PruneTests(unittest.TestCase):
             pathlib.Path(f"{d}/backups/20210106T000000.000-from-20210105T000000.000.ubkp").touch()
             with open(f"{d}/state.json", "w+") as fd: fd.write('{"test":"20210106T000000.000"}')
 
-            self.assertEqual(6, len(check_output([uback, "list", "snapshots", source]).splitlines()))
+            self.assertEqual(6, len(check_output([uback, "list", "archives", source]).splitlines()))
             self.assertEqual(6, len(check_output([uback, "list", "backups", dest]).splitlines()))
             
             check_call([uback, "prune", "snapshots", source])
@@ -40,7 +45,7 @@ class PruneTests(unittest.TestCase):
             os.mkdir(f"{d}/snapshots")
             os.mkdir(f"{d}/backups")
             os.mkdir(f"{d}/source")
-            source = f"type=tar,path={d}/source,key-file={d}/backup.pub,state-file={d}/state.json,snapshots-path={d}/snapshots,full-interval=weekly"
+            source = f"type=command,command=uback-tar-src,path={d}/source,key-file={d}/backup.pub,state-file={d}/state.json,snapshots-path={d}/snapshots,full-interval=weekly"
             dest = f"id=test,type=fs,path={d}/backups,@retention-policy=daily=3"
 
             pathlib.Path(f"{d}/snapshots/20210101T000000.000").touch()
@@ -57,7 +62,7 @@ class PruneTests(unittest.TestCase):
             pathlib.Path(f"{d}/backups/20210106T000000.000-from-20210105T000000.000.ubkp").touch()
             with open(f"{d}/state.json", "w+") as fd: fd.write('{"test":"20210106T000000.000"}')
 
-            self.assertEqual(6, len(check_output([uback, "list", "snapshots", source]).splitlines()))
+            self.assertEqual(6, len(check_output([uback, "list", "archives", source]).splitlines()))
             self.assertEqual(6, len(check_output([uback, "list", "backups", dest]).splitlines()))
 
             b = check_output([uback, "backup", source, dest]).strip().decode()
@@ -74,7 +79,7 @@ class PruneTests(unittest.TestCase):
             os.mkdir(f"{d}/snapshots")
             os.mkdir(f"{d}/backups")
             os.mkdir(f"{d}/source")
-            source = f"type=tar,path={d}/source,key-file={d}/backup.pub,state-file={d}/state.json,snapshots-path={d}/snapshots,full-interval=weekly"
+            source = f"type=command,command=uback-tar-src,path={d}/source,key-file={d}/backup.pub,state-file={d}/state.json,snapshots-path={d}/snapshots,full-interval=weekly"
             dest = f"id=test,type=fs,path={d}/backups,@retention-policy=daily=3"
 
             pathlib.Path(f"{d}/snapshots/20210101T000000.000").touch()
@@ -91,7 +96,7 @@ class PruneTests(unittest.TestCase):
             pathlib.Path(f"{d}/backups/20210106T000000.000-from-20210105T000000.000.ubkp").touch()
             with open(f"{d}/state.json", "w+") as fd: fd.write('{"test":"20210106T000000.000"}')
 
-            self.assertEqual(6, len(check_output([uback, "list", "snapshots", source]).splitlines()))
+            self.assertEqual(6, len(check_output([uback, "list", "archives", source]).splitlines()))
             self.assertEqual(6, len(check_output([uback, "list", "backups", dest]).splitlines()))
 
             b = check_output([uback, "backup", "-n", source, dest]).strip().decode()

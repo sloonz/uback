@@ -119,7 +119,12 @@ func newMariaBackupSourceForRestoration(options *uback.Options) (uback.Source, e
 }
 
 // Part of uback.Source interface
-func (s *mariaBackupSource) ListSnapshots() ([]uback.Snapshot, error) {
+func (s *mariaBackupSource) ListArchives() ([]uback.Snapshot, error) {
+	return nil, nil
+}
+
+// Part of uback.Source interface
+func (s *mariaBackupSource) ListBookmarks() ([]uback.Snapshot, error) {
 	if s.snapshotsPath == "" {
 		return nil, nil
 	}
@@ -149,7 +154,12 @@ func (s *mariaBackupSource) ListSnapshots() ([]uback.Snapshot, error) {
 }
 
 // Part of uback.Source interface
-func (s *mariaBackupSource) RemoveSnapshot(snapshot uback.Snapshot) error {
+func (s *mariaBackupSource) RemoveArchive(snapshot uback.Snapshot) error {
+	panic("should never happen")
+}
+
+// Part of uback.Source interface
+func (s *mariaBackupSource) RemoveBookmark(snapshot uback.Snapshot) error {
 	if s.snapshotsPath == "" {
 		return nil
 	}

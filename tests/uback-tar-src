@@ -18,6 +18,10 @@ if [ "$1" != "source" ] ; then
   exit 1
 fi
 
+if [ -n "$UBACK_OPT_SNAPSHOTS_PATH" ] ; then
+  mkdir -p -- "$UBACK_OPT_SNAPSHOTS_PATH"
+fi
+
 case "$2" in
   type)
     echo "command:uback-tar-src"
@@ -30,13 +34,32 @@ case "$2" in
       exit 1
     fi
     ;;
-  list-snapshots)
-    mkdir -p -- "$UBACK_OPT_SNAPSHOTS_PATH"
-    ls -- "$UBACK_OPT_SNAPSHOTS_PATH"
+  list-archives)
+    # for unit tests
+    if [ "$tar_snapshots_kind" = "archives" ] ; then
+      ls -- "$UBACK_OPT_SNAPSHOTS_PATH"
+    fi
     ;;
-  remove-snapshot)
-    mkdir -p -- "$UBACK_OPT_SNAPSHOTS_PATH"
-    rm -f -- "$UBACK_OPT_SNAPSHOTS_PATH/$3"
+  list-bookmarks)
+    if [ "$tar_snapshots_kind" != "archives" ] ; then
+      ls -- "$UBACK_OPT_SNAPSHOTS_PATH"
+    fi
+    ;;
+  remove-archive)
+    if [ "$tar_snapshots_kind" = "archives" ] ; then
+      rm -f -- "$UBACK_OPT_SNAPSHOTS_PATH/$3"
+    else
+      printf "Should never happen" >&2
+      exit 1
+    fi
+    ;;
+  remove-bookmark)
+    if [ "$tar_snapshots_kind" != "archives" ] ; then
+      rm -f -- "$UBACK_OPT_SNAPSHOTS_PATH/$3"
+    else
+      printf "Should never happen" >&2
+      exit 1
+    fi
     ;;
   create-backup)
     ns=$(date -u +%N)

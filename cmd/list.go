@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"github.com/sloonz/uback/lib"
+	uback "github.com/sloonz/uback/lib"
 
 	"fmt"
 
@@ -34,16 +34,37 @@ var cmdListBackups = &cobra.Command{
 	},
 }
 
-var cmdListSnapshots = &cobra.Command{
-	Use:   "snapshots <source>",
-	Short: "List snapshots on a source",
+var cmdListArchives = &cobra.Command{
+	Use:   "archives <source>",
+	Short: "List archives on a source",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		srcOpts := newOptionsBuilder(uback.EvalOptions(uback.SplitOptions(args[0]), presets)).
 			WithSource().
 			FatalOnError()
 
-		snapshots, err := uback.SortedListSnapshots(srcOpts.Source)
+		snapshots, err := uback.SortedListArchives(srcOpts.Source)
+		if err != nil {
+			logrus.Fatal(err)
+		}
+
+		for i := len(snapshots) - 1; i >= 0; i-- {
+			s := snapshots[i]
+			fmt.Println(string(s))
+		}
+	},
+}
+
+var cmdListBookmarks = &cobra.Command{
+	Use:   "bookmarks <source>",
+	Short: "List bookmarks on a source",
+	Args:  cobra.ExactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		srcOpts := newOptionsBuilder(uback.EvalOptions(uback.SplitOptions(args[0]), presets)).
+			WithSource().
+			FatalOnError()
+
+		snapshots, err := uback.SortedListBookmarks(srcOpts.Source)
 		if err != nil {
 			logrus.Fatal(err)
 		}
@@ -60,5 +81,5 @@ var cmdList = &cobra.Command{
 }
 
 func init() {
-	cmdList.AddCommand(cmdListSnapshots, cmdListBackups)
+	cmdList.AddCommand(cmdListArchives, cmdListBookmarks, cmdListBackups)
 }

@@ -90,17 +90,30 @@ func SortedListBackups(dst Destination) ([]Backup, error) {
 }
 
 // Sorted from most recent to least recent
-func SortedListSnapshots(src Source) ([]Snapshot, error) {
-	snapshots, err := src.ListSnapshots()
+func SortedListArchives(src Source) ([]Snapshot, error) {
+	archives, err := src.ListArchives()
 	if err != nil {
 		return nil, err
 	}
 
-	sort.Slice(snapshots, func(a, b int) bool {
-		return CompareSnapshots(snapshots[a], snapshots[b]) >= 0
+	sort.Slice(archives, func(a, b int) bool {
+		return CompareSnapshots(archives[a], archives[b]) >= 0
 	})
 
-	return snapshots, nil
+	return archives, nil
+}
+
+func SortedListBookmarks(src Source) ([]Snapshot, error) {
+	bookmarks, err := src.ListBookmarks()
+	if err != nil {
+		return nil, err
+	}
+
+	sort.Slice(bookmarks, func(a, b int) bool {
+		return CompareSnapshots(bookmarks[a], bookmarks[b]) >= 0
+	})
+
+	return bookmarks, nil
 }
 
 // Reverse of Backup.Filename()
