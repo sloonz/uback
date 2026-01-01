@@ -37,7 +37,7 @@ INFO[0000] creating backup: 20210515T124130.706-full.ubkp  source=tar
 INFO[0000] running: /usr/bin/tar --create -C /tmp/etc . 
 INFO[0000] writing backup to /tmp/my-backups/etc/_tmp-20210515T124130.706-full.ubkp  destination=fs
 INFO[0000] moving final backup to /tmp/my-backups/etc/20210515T124130.706-full.ubkp  destination=fs
-INFO[0000] deleting snapshot                             snapshot=20210515T124130.706
+INFO[0000] deleting bookmark                             bookmark=20210515T124130.706
 WARN[0000] no retention policies set for destination, keeping everything 
 ```
 
@@ -113,6 +113,12 @@ each destination, allowing us to remove unused ones. This is not specific
 to the source type and is needed as soon as you want incremental
 backups. It is given by the `state-file` option.
 
+* Note that for sources, there is two distinct kind of snapshots, archives
+and bookmarks. Both can be used as incremental bases to create incremental
+backups, but bookmarks only store minimal metadata necessary to know
+what delta must be sent in the incremental backup and cannot be used as
+a local backup, whereas archives can also be used as a local backup.
+
 First, let’s create a (relatively) big file (so we can see the effect
 of incremental backups), a full backup and its associated snapshot :
 
@@ -140,7 +146,7 @@ INFO[0000] creating backup: 20210515T130258.315-from-20210515T130148.562.ubkp  s
 INFO[0000] running: /usr/bin/tar --create --listed-incremental=/tmp/uback/tar-snapshots/etc/_tmp-20210515T130258.315 -C /tmp/etc . 
 INFO[0000] writing backup to /tmp/my-backups/etc/_tmp-20210515T130258.315-from-20210515T130148.562.ubkp  destination=fs
 INFO[0000] moving final backup to /tmp/my-backups/etc/20210515T130258.315-from-20210515T130148.562.ubkp  destination=fs
-INFO[0000] deleting snapshot                             snapshot=20210515T130148.562
+INFO[0000] deleting bookmark                             bookmark=20210515T130148.562
 WARN[0000] no retention policies set for destination, keeping everything 
 ```
 
@@ -208,7 +214,7 @@ INFO[0000] creating backup: 20210515T131759.943-from-20210515T130258.315.ubkp  s
 INFO[0000] running: /usr/bin/tar --create --listed-incremental=/tmp/uback/tar-snapshots/etc/_tmp-20210515T131759.943 -C /tmp/etc . 
 INFO[0000] writing backup to /tmp/my-backups/etc/_tmp-20210515T131759.943-from-20210515T130258.315.ubkp  destination=fs
 INFO[0000] moving final backup to /tmp/my-backups/etc/20210515T131759.943-from-20210515T130258.315.ubkp  destination=fs
-INFO[0000] deleting snapshot                             snapshot=20210515T130258.315
+INFO[0000] deleting bookmark                             bookmark=20210515T130258.315
 WARN[0000] no retention policies set for destination, keeping everything 
 ```
 
@@ -354,20 +360,18 @@ command line) and can be manually performed with `uback prune`.
 
 For backups, the default policy is to retain everything.
 
-For snapshots, the default policy is to retain nothing except the
-snapshots that are present in `StateFile`, which just means the latest
+For bookmarks, the unique policy (not configurable) is to only retain
+the ones that are present in `StateFile`, which just means the latest
 successful backup present on each destination.
 
-Snapshots retention policies are specified on the source, whereas backups
+For archives, the default policy is to retain nothing, except the
+snapshots that are present in `StateFile` and not covered by a bookmark.
+
+Archives retention policies are specified on the source, whereas backups
 retention policies are specified on the destination.
 
-We will not discuss snapshots retention and pruning ; it works exactly
-the same way as backups, but most of the time snapshots are not useful to
-keep around and the default policy of only keeping the last one (for the
-ability to create an incremental backup from it) is perfectly fine. In
-some rare situations (for example with `btrfs` source) a snapshot can
-be useful by itself and you may want to specify a retention policy for
-the snapshots to keep them around.
+We will not discuss archives retention and pruning ; it works exactly the
+same way as backups.
 
 A retention policy consists of three pieces of information :
 

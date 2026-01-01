@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"github.com/sloonz/uback/container"
-	"github.com/sloonz/uback/lib"
+	uback "github.com/sloonz/uback/lib"
 
 	"encoding/json"
 	"fmt"
@@ -44,13 +44,21 @@ var (
 				logrus.Fatal(err)
 			}
 
-			snapshots, err := uback.SortedListSnapshots(srcOpts.Source)
+			bookmarks, err := uback.SortedListBookmarks(srcOpts.Source)
+			if err != nil {
+				logrus.Fatal(err)
+			}
+
+			archives, err := uback.SortedListArchives(srcOpts.Source)
 			if err != nil {
 				logrus.Fatal(err)
 			}
 
 			snapshotsSet := make(map[uback.Snapshot]interface{})
-			for _, s := range snapshots {
+			for _, s := range bookmarks {
+				snapshotsSet[s] = nil
+			}
+			for _, s := range archives {
 				snapshotsSet[s] = nil
 			}
 
@@ -169,7 +177,7 @@ var (
 			fmt.Println(backup.FullName())
 
 			if !cmdBackupNoPrune {
-				err = uback.PruneSnapshots(srcOpts.Source, append([]uback.Snapshot{backup.Snapshot}, snapshots...), srcOpts.RetentionPolicies, state)
+				err = uback.PruneSnapshots(srcOpts.Source, srcOpts.RetentionPolicies, state)
 				if err != nil {
 					logrus.Warnf("cannot prune snapshots: %v", err)
 				}

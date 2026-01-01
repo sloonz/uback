@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"github.com/sloonz/uback/lib"
+	uback "github.com/sloonz/uback/lib"
 
 	"encoding/json"
 	"fmt"
@@ -56,7 +56,12 @@ var cmdPruneSnapshots = &cobra.Command{
 			WithStateFile().
 			FatalOnError()
 
-		allSnapshots, err := uback.SortedListSnapshots(srcOpts.Source)
+		archives, err := uback.SortedListArchives(srcOpts.Source)
+		if err != nil {
+			logrus.Fatal(err)
+		}
+
+		bookmarks, err := uback.SortedListBookmarks(srcOpts.Source)
 		if err != nil {
 			logrus.Fatal(err)
 		}
@@ -79,17 +84,27 @@ var cmdPruneSnapshots = &cobra.Command{
 			}
 		}
 
-		prunedSnapshots, err := uback.GetPrunedSnapshots(allSnapshots, srcOpts.RetentionPolicies, state)
+		prunedArchives, prunedBookmarks, err := uback.GetPrunedSnapshots(archives, bookmarks, srcOpts.RetentionPolicies, state)
 		if err != nil {
 			logrus.Fatal(err)
 		}
 
-		for _, s := range prunedSnapshots {
+		for _, s := range prunedArchives {
 			fmt.Println(string(s))
 			if !cmdPruneSnapshotsDryRun {
-				err = srcOpts.Source.RemoveSnapshot(s)
+				err = srcOpts.Source.RemoveArchive(s)
 				if err != nil {
-					logrus.WithFields(logrus.Fields{"snapshot": string(s)}).Warnf("cannot remove snapshot: %v", err)
+					logrus.WithFields(logrus.Fields{"archive": string(s)}).Warnf("cannot remove archive: %v", err)
+				}
+			}
+		}
+
+		for _, s := range prunedBookmarks {
+			fmt.Println(string(s))
+			if !cmdPruneSnapshotsDryRun {
+				err = srcOpts.Source.RemoveBookmark(s)
+				if err != nil {
+					logrus.WithFields(logrus.Fields{"bookmark": string(s)}).Warnf("cannot remove bookmark: %v", err)
 				}
 			}
 		}

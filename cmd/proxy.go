@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"github.com/sloonz/uback/destinations"
-	"github.com/sloonz/uback/lib"
+	uback "github.com/sloonz/uback/lib"
 	"github.com/sloonz/uback/sources"
 
 	"io"
@@ -83,7 +83,7 @@ type Source struct {
 	backup     io.ReadCloser
 }
 
-func (s *Source) ListSnapshots(args *sources.ListSnapshotsArgs, reply *[]uback.Snapshot) error {
+func (s *Source) ListArchives(args *sources.ListSnapshotsArgs, reply *[]uback.Snapshot) error {
 	var err error
 
 	srcOpts := newOptionsBuilder(&args.Options, nil).WithSource()
@@ -91,20 +91,44 @@ func (s *Source) ListSnapshots(args *sources.ListSnapshotsArgs, reply *[]uback.S
 		return srcOpts.Error
 	}
 
-	*reply, err = srcOpts.Source.ListSnapshots()
+	*reply, err = srcOpts.Source.ListArchives()
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (s *Source) RemoveSnapshot(args *sources.RemoveSnapshotArgs, reply *struct{}) error {
+func (s *Source) ListBookmarks(args *sources.ListSnapshotsArgs, reply *[]uback.Snapshot) error {
+	var err error
+
 	srcOpts := newOptionsBuilder(&args.Options, nil).WithSource()
 	if srcOpts.Error != nil {
 		return srcOpts.Error
 	}
 
-	return srcOpts.Source.RemoveSnapshot(args.Snapshot)
+	*reply, err = srcOpts.Source.ListBookmarks()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *Source) RemoveArchive(args *sources.RemoveSnapshotArgs, reply *struct{}) error {
+	srcOpts := newOptionsBuilder(&args.Options, nil).WithSource()
+	if srcOpts.Error != nil {
+		return srcOpts.Error
+	}
+
+	return srcOpts.Source.RemoveArchive(args.Snapshot)
+}
+
+func (s *Source) RemoveBookmark(args *sources.RemoveSnapshotArgs, reply *struct{}) error {
+	srcOpts := newOptionsBuilder(&args.Options, nil).WithSource()
+	if srcOpts.Error != nil {
+		return srcOpts.Error
+	}
+
+	return srcOpts.Source.RemoveBookmark(args.Snapshot)
 }
 
 func (s *Source) CreateBackup(args *sources.CreateBackupArgs, reply *uback.Backup) error {

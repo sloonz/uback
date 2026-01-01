@@ -1,7 +1,7 @@
 package sources
 
 import (
-	"github.com/sloonz/uback/lib"
+	uback "github.com/sloonz/uback/lib"
 
 	"errors"
 	"fmt"
@@ -60,8 +60,7 @@ func newProxySource(options *uback.Options) (uback.Source, string, error) {
 	return &proxySource{options: options, command: command}, typ, nil
 }
 
-// Part of uback.Source interface
-func (s *proxySource) ListSnapshots() ([]uback.Snapshot, error) {
+func (s *proxySource) listSnapshots(kind string) ([]uback.Snapshot, error) {
 	session, rpcClient, _, err := uback.OpenProxy(proxyLog, s.command)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to open proxy session: %v", err)
@@ -69,7 +68,7 @@ func (s *proxySource) ListSnapshots() ([]uback.Snapshot, error) {
 	defer uback.CloseProxy(session, rpcClient) //nolint: errcheck
 
 	var snapshots []uback.Snapshot
-	err = rpcClient.Call("Source.ListSnapshots", &ListSnapshotsArgs{Options: uback.ProxiedOptions(s.options)}, &snapshots)
+	err = rpcClient.Call("Source.List"+kind, &ListSnapshotsArgs{Options: uback.ProxiedOptions(s.options)}, &snapshots)
 	if err != nil {
 		return nil, err
 	}
@@ -83,14 +82,34 @@ func (s *proxySource) ListSnapshots() ([]uback.Snapshot, error) {
 }
 
 // Part of uback.Source interface
-func (s *proxySource) RemoveSnapshot(snapshot uback.Snapshot) error {
+func (s *proxySource) ListArchives() ([]uback.Snapshot, error) {
+	return s.listSnapshots("Archives")
+}
+
+// Part of uback.Source interface
+func (s *proxySource) ListBookmarks() ([]uback.Snapshot, error) {
+	return s.listSnapshots("Bookmarks")
+}
+
+// Part of uback.Source interface
+func (s *proxySource) removeSnapshot(kind string, snapshot uback.Snapshot) error {
 	session, rpcClient, _, err := uback.OpenProxy(proxyLog, s.command)
 	if err != nil {
 		return fmt.Errorf("Failed to open proxy session: %v", err)
 	}
 	defer uback.CloseProxy(session, rpcClient) //nolint: errcheck
 
-	return rpcClient.Call("Source.RemoveSnapshot", &RemoveSnapshotArgs{Options: uback.ProxiedOptions(s.options), Snapshot: snapshot}, nil)
+	return rpcClient.Call("Source.Remove"+kind, &RemoveSnapshotArgs{Options: uback.ProxiedOptions(s.options), Snapshot: snapshot}, nil)
+}
+
+// Part of uback.Source interface
+func (s *proxySource) RemoveArchive(snapshot uback.Snapshot) error {
+	return s.removeSnapshot("Archive", snapshot)
+}
+
+// Part of uback.Source interface
+func (s *proxySource) RemoveBookmark(snapshot uback.Snapshot) error {
+	return s.removeSnapshot("Bookmark", snapshot)
 }
 
 // Part of uback.Source interface

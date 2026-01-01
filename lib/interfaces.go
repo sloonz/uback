@@ -19,11 +19,15 @@ type Backup struct {
 
 // A source is what we want to backup
 type Source interface {
-	// Get all snapshots that can be used as a base snapshot for incremental backups
-	ListSnapshots() ([]Snapshot, error)
+	// Archives can be used for local backup restoration in addition to incremental bases.
+	// They are subject to retention rules.
+	ListArchives() ([]Snapshot, error)
+	RemoveArchive(snapshot Snapshot) error
 
-	// Remove a snapshot
-	RemoveSnapshot(snapshot Snapshot) error
+	// Bookmarks can be used as incremental bases, and are only kept around for them.
+	// They are removed as soon as no destination needs them for creating an incremental.
+	ListBookmarks() ([]Snapshot, error)
+	RemoveBookmark(snapshot Snapshot) error
 
 	// Create a backup from a base snapshot (if supported by the source), or nil for a full snapshot.
 	// Returns the name of the created backup, and a reader to the backup data.
