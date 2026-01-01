@@ -9,7 +9,7 @@ data dir (that you can directly restore into `/var/lib/mysql`), not a
 SQL file.
 
 `uback` will create two helpers scripts in the restored directory,
-`dumpsql-local.sh` and `dumpsql-docker.sh`, that will start a temporary
+`dumpsql-local.sh` and `dumpsql-podman.sh`, that will start a temporary
 (warning: unsecured) MariaDB server and will run `mariadb-dump` on it,
 for example :
 
@@ -18,7 +18,9 @@ $ /path/to/restored/data/dumpsql-local.sh --all-databases > backup.sql
 ```
 
 `dumpsql-local.sh` will use a local system-wide installation of MariaDB,
-whereas `dumpsq-local.sh` will spawn a docker container.
+whereas `dumpsq-podman.sh` will work in podman containers. It is strongly
+recommended to use the latter, since it will use the same mariadb version
+for restoration that the one that produced the backup.
 
 ## Options
 
@@ -75,12 +77,12 @@ Optional, defaults: `[mariadb]`
 Same remarks as `Command` apply. This is only used for server version
 check.
 
-### UseDocker (restoration only)
+### UsePodman (restoration only)
 
 Optional, defaults: `true`
 
 During the restoration process, `mariadb-backup --prepare` must be run,
 with the same version than the server that created the backup (althought
 it tend to work even with version mismatch). If this option is set
-to true, run the command in a docker process with the correct mariadb
+to true, run the command in a podman process with the correct mariadb
 version. If false, uses `@Command` for the restoration process.
