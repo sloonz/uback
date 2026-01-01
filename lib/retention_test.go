@@ -253,14 +253,14 @@ func TestPrunedBackups(t *testing.T) {
 	}
 }
 
-func TestPrunedSnapshots(t *testing.T) {
-	var snapshots []Snapshot
+func TestPruneArchives(t *testing.T) {
+	var archives []Snapshot
 	var policies []RetentionPolicy
-	var pruned, expectedPruned []Snapshot
+	var prunedArchives, prunedBookmarks, expectedPrunedArchives []Snapshot
 	var err error
 
 	// Normal policy
-	snapshots = []Snapshot{
+	archives = []Snapshot{
 		"20210131T000000.000",
 		"20210130T120000.000",
 		"20210130T000002.000",
@@ -271,17 +271,21 @@ func TestPrunedSnapshots(t *testing.T) {
 	policies = []RetentionPolicy{
 		{Interval: 24 * 3600, Count: 2, FullOnly: false},
 	}
-	expectedPruned = snapshots[3:]
+	expectedPrunedArchives = archives[3:]
 
-	pruned, err = GetPrunedSnapshots(snapshots, policies, map[string]string{"test-dest": "20210130T120000.000"})
+	prunedArchives, prunedBookmarks, err = GetPrunedSnapshots(archives, nil, policies, map[string]string{"test-dest": "20210130T120000.000"})
 	if err != nil {
 		t.Error(err)
-	} else if !reflect.DeepEqual(pruned, expectedPruned) {
-		t.Errorf("expected: %v, got: %v", expectedPruned, pruned)
+	} else if !reflect.DeepEqual(prunedArchives, expectedPrunedArchives) {
+		t.Errorf("expected: %v, got: %v", expectedPrunedArchives, prunedArchives)
+	}
+
+	if len(prunedBookmarks) != 0 {
+		t.Errorf("Expected 0 pruned bookmarks")
 	}
 
 	// Default policy: prune everything
-	snapshots = []Snapshot{
+	archives = []Snapshot{
 		"20210131T000000.000",
 		"20210130T120000.000",
 		"20210130T000002.000",
@@ -290,7 +294,7 @@ func TestPrunedSnapshots(t *testing.T) {
 		"20210127T000000.000",
 	}
 	policies = nil
-	expectedPruned = []Snapshot{
+	expectedPrunedArchives = []Snapshot{
 		"20210131T000000.000",
 		"20210130T120000.000",
 		"20210129T000001.000",
@@ -298,10 +302,137 @@ func TestPrunedSnapshots(t *testing.T) {
 		"20210127T000000.000",
 	}
 
-	pruned, err = GetPrunedSnapshots(snapshots, policies, map[string]string{"test-dest": "20210130T000002.000"})
+	prunedArchives, prunedBookmarks, err = GetPrunedSnapshots(archives, nil, policies, map[string]string{"test-dest": "20210130T000002.000"})
 	if err != nil {
 		t.Error(err)
-	} else if !reflect.DeepEqual(pruned, expectedPruned) {
-		t.Errorf("expected: %v, got: %v", expectedPruned, pruned)
+	} else if !reflect.DeepEqual(prunedArchives, expectedPrunedArchives) {
+		t.Errorf("expected: %v, got: %v", expectedPrunedArchives, prunedArchives)
+	}
+
+	if len(prunedBookmarks) != 0 {
+		t.Errorf("Expected 0 pruned bookmarks")
+	}
+}
+
+func TestPruneBookmarks(t *testing.T) {
+	var bookmarks []Snapshot
+	var policies []RetentionPolicy
+	var prunedArchives, prunedBookmarks, expectedPrunedBookmarks []Snapshot
+	var err error
+
+	bookmarks = []Snapshot{
+		"20210131T000000.000",
+		"20210130T120000.000",
+		"20210130T000002.000",
+		"20210129T000001.000",
+		"20210128T000000.000",
+		"20210127T000000.000",
+	}
+	policies = []RetentionPolicy{
+		{Interval: 24 * 3600, Count: 2, FullOnly: false},
+	}
+	expectedPrunedBookmarks = []Snapshot{
+		"20210131T000000.000",
+		"20210130T000002.000",
+		"20210129T000001.000",
+		"20210128T000000.000",
+		"20210127T000000.000",
+	}
+
+	prunedArchives, prunedBookmarks, err = GetPrunedSnapshots(nil, bookmarks, policies, map[string]string{"test-dest": "20210130T120000.000"})
+	if err != nil {
+		t.Error(err)
+	} else if !reflect.DeepEqual(prunedBookmarks, expectedPrunedBookmarks) {
+		t.Errorf("expected: %v, got: %v", expectedPrunedBookmarks, prunedBookmarks)
+	}
+
+	if len(prunedArchives) != 0 {
+		t.Errorf("Expected 0 pruned archives")
+	}
+}
+
+func TestPruneSnapshots(t *testing.T) {
+	var archives, bookmarks []Snapshot
+	var policies []RetentionPolicy
+	var prunedArchives, prunedBookmarks, expectedPrunedArchives, expectedPrunedBookmarks []Snapshot
+	var err error
+
+	// Normal policy
+	archives = []Snapshot{
+		"20210131T000000.000",
+		"20210130T120000.000",
+		"20210130T000002.000",
+		"20210129T000001.000",
+		"20210128T000000.000",
+		"20210127T000000.000",
+	}
+	bookmarks = []Snapshot{
+		"20210131T000000.000",
+		"20210130T120000.000",
+		"20210130T000002.000",
+		"20210129T000001.000",
+		"20210128T000000.000",
+		"20210127T000000.000",
+	}
+	policies = []RetentionPolicy{
+		{Interval: 24 * 3600, Count: 2, FullOnly: false},
+	}
+	expectedPrunedArchives = []Snapshot{
+		"20210130T120000.000",
+		"20210129T000001.000",
+		"20210128T000000.000",
+		"20210127T000000.000",
+	}
+	expectedPrunedBookmarks = []Snapshot{
+		"20210131T000000.000",
+		"20210130T000002.000",
+		"20210129T000001.000",
+		"20210128T000000.000",
+		"20210127T000000.000",
+	}
+
+	prunedArchives, prunedBookmarks, err = GetPrunedSnapshots(archives, bookmarks, policies, map[string]string{"test-dest": "20210130T120000.000"})
+	if err != nil {
+		t.Error(err)
+	} else if !reflect.DeepEqual(prunedArchives, expectedPrunedArchives) {
+		t.Errorf("expected: %v, got: %v", expectedPrunedArchives, prunedArchives)
+	} else if !reflect.DeepEqual(prunedBookmarks, expectedPrunedBookmarks) {
+		t.Errorf("expected: %v, got: %v", expectedPrunedBookmarks, prunedBookmarks)
+	}
+
+	// Default policy: prune everything
+	archives = []Snapshot{
+		"20210131T000000.000",
+		"20210130T120000.000",
+		"20210130T000002.000",
+		"20210129T000001.000",
+		"20210128T000000.000",
+		"20210127T000000.000",
+	}
+	bookmarks = []Snapshot{
+		"20210131T000000.000",
+		"20210130T120000.000",
+		"20210130T000002.000",
+		"20210129T000001.000",
+		"20210128T000000.000",
+		"20210127T000000.000",
+	}
+	policies = nil
+	expectedPrunedArchives = archives
+	expectedPrunedBookmarks = []Snapshot{
+		"20210131T000000.000",
+		"20210130T120000.000",
+		"20210129T000001.000",
+		"20210128T000000.000",
+		"20210127T000000.000",
+	}
+
+	prunedArchives, prunedBookmarks, err = GetPrunedSnapshots(archives, bookmarks, policies, map[string]string{"test-dest": "20210130T000002.000"})
+	if err != nil {
+		t.Error(err)
+	} else if !reflect.DeepEqual(prunedArchives, expectedPrunedArchives) {
+		t.Errorf("expected: %v, got: %v", expectedPrunedArchives, prunedArchives)
+	} else if !reflect.DeepEqual(prunedBookmarks, expectedPrunedBookmarks) {
+		t.Errorf("expected: %v, got: %v", expectedPrunedBookmarks, prunedBookmarks)
 	}
 }

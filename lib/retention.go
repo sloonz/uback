@@ -185,37 +185,54 @@ func GetPrunedBackups(backups []Backup, policies []RetentionPolicy) ([]Backup, e
 }
 
 // Get snapshots from a source not retained by a given retention policy
-func GetPrunedSnapshots(snapshots []Snapshot, policies []RetentionPolicy, state map[string]string) ([]Snapshot, error) {
-	subjects := make([]RetentionPolicySubject, 0, len(snapshots))
-	for _, s := range snapshots {
-		subjects = append(subjects, s)
+func GetPrunedSnapshots(archives []Snapshot, bookmarks []Snapshot, policies []RetentionPolicy, state map[string]string) ([]Snapshot, []Snapshot, error) {
+	subjects := make([]RetentionPolicySubject, 0, len(archives))
+	for _, a := range archives {
+		subjects = append(subjects, a)
 	}
 
-	var retained map[string]struct{}
+	var retainedArchives map[string]struct{}
 	if len(policies) == 0 {
 		// Default policy for snapshots is to retain nothing
-		retained = make(map[string]struct{})
+		retainedArchives = make(map[string]struct{})
 	} else {
 		var err error
-		retained, err = ApplyRetentionPolicies(policies, subjects)
+		retainedArchives, err = ApplyRetentionPolicies(policies, subjects)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 	}
 
-	// Retain snapshots used by destinations
+	bookmarksSet := make(map[string]struct{})
+	for _, b := range bookmarks {
+		bookmarksSet[b.Name()] = struct{}{}
+	}
+
+	// Retain bookmarks used by destinations
+	// Retain archives used by destinations, unless covered by a bookmark
+	retainedBookmarks := make(map[string]struct{})
 	for _, s := range state {
-		retained[s] = struct{}{}
-	}
-
-	pruned := make([]Snapshot, 0, len(snapshots)-len(retained))
-	for _, s := range snapshots {
-		if _, ok := retained[s.Name()]; !ok {
-			pruned = append(pruned, s)
+		retainedBookmarks[s] = struct{}{}
+		if _, ok := bookmarksSet[s]; !ok {
+			retainedArchives[s] = struct{}{}
 		}
 	}
 
-	return pruned, nil
+	prunedArchives := make([]Snapshot, 0, len(archives))
+	for _, a := range archives {
+		if _, ok := retainedArchives[a.Name()]; !ok {
+			prunedArchives = append(prunedArchives, a)
+		}
+	}
+
+	prunedBookmarks := make([]Snapshot, 0, len(bookmarks))
+	for _, b := range bookmarks {
+		if _, ok := retainedBookmarks[b.Name()]; !ok {
+			prunedBookmarks = append(prunedBookmarks, b)
+		}
+	}
+
+	return prunedArchives, prunedBookmarks, nil
 }
 
 // Prune backups from a destinations according to a retention policy
@@ -238,18 +255,37 @@ func PruneBackups(dst Destination, backups []Backup, policies []RetentionPolicy)
 }
 
 // Prune snapshots from a source accoruding to a retention policy
-func PruneSnapshots(src Source, snapshots []Snapshot, policies []RetentionPolicy, state map[string]string) error {
-	prunedSnapshots, err := GetPrunedSnapshots(snapshots, policies, state)
+func PruneSnapshots(src Source, policies []RetentionPolicy, state map[string]string) error {
+	bookmarks, err := SortedListBookmarks(src)
 	if err != nil {
 		return err
 	}
 
-	for _, s := range prunedSnapshots {
-		log := logrus.WithFields(logrus.Fields{"snapshot": string(s)})
-		log.Printf("deleting snapshot")
-		err = src.RemoveSnapshot(s)
+	archives, err := SortedListArchives(src)
+	if err != nil {
+		return err
+	}
+
+	prunedArchives, prunedBookmarks, err := GetPrunedSnapshots(archives, bookmarks, policies, state)
+	if err != nil {
+		return err
+	}
+
+	for _, s := range prunedArchives {
+		log := logrus.WithFields(logrus.Fields{"archive": string(s)})
+		log.Printf("deleting archive")
+		err = src.RemoveArchive(s)
 		if err != nil {
-			log.Warnf("cannot prune snapshot: %v", err)
+			log.Warnf("cannot prune archive: %v", err)
+		}
+	}
+
+	for _, s := range prunedBookmarks {
+		log := logrus.WithFields(logrus.Fields{"bookmark": string(s)})
+		log.Printf("deleting bookmark")
+		err = src.RemoveBookmark(s)
+		if err != nil {
+			log.Warnf("cannot prune bookmark: %v", err)
 		}
 	}
 

@@ -43,8 +43,10 @@ A source must implement those operations, which will be described in
 the next sections :
 
 * type
-* list-snapshots
-* remove-snapshot
+* list-archives
+* list-bookmarks
+* remove-archive
+* remove-bookmark
 * create-backup
 * restore-backup
 
@@ -63,18 +65,19 @@ behavior by adding a `:` prefix (the `:` prefix will then be stripped).
 
 It is also a good place to validate the options.
 
-### list-snapshots
+### list-archives / list-bookmarks
 
 This operation takes no argument, and should print all snapshots usable
 for creating incremental backups, one per line.
 
-`list-snapshots` is allowed to return invalid snapshots names as long
-as they start with a `.` or a `_`. Those entries will be ignored.
+`list-archives` and `list-bookmarks` are allowed to return invalid
+snapshots names as long as they start with a `.` or a `_`. Those entries
+will be ignored.
 
-### remove-snapshot
+### remove-archive / remove-snapshot
 
-This operation takes one argument, and should remove the snapshot
-identified by the argument.
+This operation takes one argument, and should remove the archive or
+bookmark identified by the argument.
 
 ### create-backup
 

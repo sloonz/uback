@@ -59,3 +59,41 @@ class SrcBtrfsTests(unittest.TestCase, SrcBaseTests):
 
         check_call(["sudo", "btrfs", "subvolume", "delete", f"{self.tmpdir}/backups1/{s}"])
         check_call(["sudo", "btrfs", "subvolume", "delete", f"{self.tmpdir}/backups2/{s}"])
+
+    def test_btrfs_archive_retention_policy(self):
+        source = f"type=btrfs,path={self.tmpdir}/source,no-encryption=1,state-file={self.tmpdir}/state.json,snapshots-path={self.tmpdir}/snapshots,full-interval=100y," +\
+            "send-command=sudo btrfs send,delete-command=sudo btrfs subvolume delete,@retention-policy=daily=7"
+        dest = f"id=test,type=fs,path={self.tmpdir}/backups,@retention-policy=daily=3"
+
+        archives = [
+            "20241227T060000.155",
+            "20241228T060000.703",
+            "20241229T060001.036",
+            "20241230T060000.634",
+            "20241231T060001.290",
+            "20250101T060000.617",
+            "20250102T060001.508",
+            "20250103T060000.829",
+        ]
+
+        ensure_dir(f"{self.tmpdir}/restore")
+
+        renames = []
+        for archive in archives:
+            b = check_output([uback, "backup", "-n", source, f"id=test,{dest},path={self.tmpdir}/backups"]).strip().decode()
+            renames.append((b.split("-")[0], archive))
+        for a, b in renames:
+            os.rename(f"{self.tmpdir}/snapshots/{a}", f"{self.tmpdir}/snapshots/{b}")
+        with open(f"{self.tmpdir}/state.json", "w+") as fd:
+            fd.write(json.dumps({"test": renames[-1][1]}))
+        b = check_output([uback, "backup", source, f"id=test,{dest},path={self.tmpdir}/backups"]).strip().decode().split("-")[0]
+
+        self.assertEqual(set(os.listdir(f"{self.tmpdir}/snapshots")), {
+            "20241229T060001.036",
+            "20241230T060000.634",
+            "20241231T060001.290",
+            "20250101T060000.617",
+            "20250102T060001.508",
+            "20250103T060000.829",
+            b,
+        })

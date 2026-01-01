@@ -74,7 +74,7 @@ func newBtrfsSourceForRestoration(options *uback.Options) (uback.Source, error) 
 }
 
 // Part of uback.Source interface
-func (s *btrfsSource) ListSnapshots() ([]uback.Snapshot, error) {
+func (s *btrfsSource) ListArchives() ([]uback.Snapshot, error) {
 	if s.snapshotsPath == "" {
 		return nil, nil
 	}
@@ -104,12 +104,22 @@ func (s *btrfsSource) ListSnapshots() ([]uback.Snapshot, error) {
 }
 
 // Part of uback.Source interface
-func (s *btrfsSource) RemoveSnapshot(snapshot uback.Snapshot) error {
+func (s *btrfsSource) ListBookmarks() ([]uback.Snapshot, error) {
+	return nil, nil
+}
+
+// Part of uback.Source interface
+func (s *btrfsSource) RemoveArchive(snapshot uback.Snapshot) error {
 	if s.snapshotsPath == "" {
 		return nil
 	}
 	cmd := uback.BuildCommand(s.deleteCommand, path.Join(s.snapshotsPath, string(snapshot)))
 	return uback.RunCommand(btrfsLog, cmd)
+}
+
+// Part of uback.Source interface
+func (s *btrfsSource) RemoveBookmark(snapshot uback.Snapshot) error {
+	panic("should never happen")
 }
 
 // Part of uback.Source interface
@@ -120,7 +130,7 @@ func (s *btrfsSource) CreateBackup(baseSnapshot *uback.Snapshot) (uback.Backup, 
 	tmpSnapshotPath := path.Join(s.snapshotsPath, fmt.Sprintf("_tmp-%s", snapshot))
 
 	if s.reuseSnapshots != 0 {
-		snapshots, err := uback.SortedListSnapshots(s)
+		snapshots, err := uback.SortedListArchives(s)
 		if err != nil {
 			return uback.Backup{}, nil, err
 		}
