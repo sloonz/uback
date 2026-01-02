@@ -6,9 +6,15 @@ all: uback
 uback: go.mod go.sum Makefile **/*.go *.go sources/scripts/*.sh
 	go build -ldflags="-X github.com/sloonz/uback/cmd.commit=$$(git rev-parse --short HEAD) -X github.com/sloonz/uback/cmd.buildDate=$$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
-.PHONY: test
-test: uback
+.PHONY: tests
+tests: unit-tests integration-tests
+
+.PHONY: unit-tests
+unit-tests:
 	go test ./...
+
+.PHONY: integration-tests
+integration-tests: uback
 	python -m unittest tests/*_tests.py
 
 .PHONY: lint
