@@ -13,6 +13,17 @@ tests: unit-tests integration-tests
 unit-tests:
 	go test ./...
 
+.PHONY: setup-btrfs-root
+setup-btrfs-root:
+	tmp=$$(mktemp) || exit 1; \
+	truncate -s 128MiB "$$tmp" || (unlink "$$tmp"; exit 1); \
+	dev="$$(losetup --show -f "$$tmp")" || (unlink "$$tmp"; exit 1); \
+	unlink "$$tmp" || (losetup -d "$$dev"; exit 1); \
+	mkfs.btrfs "$$dev" || (losetup -d "$$dev"; exit 1); \
+	mkdir "$(BTRFS_ROOT)" 2>/dev/null; \
+	mount "$$dev" "$(BTRFS_ROOT)" || (losetup -d "$$dev"; exit 1); \
+	chown "$(USER)" "$(BTRFS_ROOT)"
+
 .PHONY: integration-tests
 integration-tests: uback
 	python -m unittest tests/*_tests.py
