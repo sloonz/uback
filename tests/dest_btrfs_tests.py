@@ -2,16 +2,12 @@ from .common import *
 
 class DestBtrfsTests(unittest.TestCase, SrcBaseTests):
     def setUp(self):
-        test_root = os.environ.get("UBACK_BTRFS_TEST_ROOT")
+        test_root = os.environ.get("BTRFS_ROOT")
         if test_root is None:
-            raise unittest.SkipTest("UBACK_BTRFS_TEST_ROOT not set")
+            raise unittest.SkipTest("BTRFS_ROOT not set")
 
-        basetmpdir = tempfile.mkdtemp(dir=test_root)
-        self.tmpdir = f"{basetmpdir}/dest-test"
-        if os.path.exists(self.tmpdir):
-            raise Exception("UBACK_BTRFS_TEST_ROOT already exists")
+        self.tmpdir = tempfile.mkdtemp(dir=test_root)
 
-        subprocess.check_call(["btrfs", "subvolume", "create", self.tmpdir])
         subprocess.check_call(["btrfs", "subvolume", "create", f"{self.tmpdir}/source"])
         ensure_dir(f"{self.tmpdir}/snapshots")
 
@@ -23,11 +19,7 @@ class DestBtrfsTests(unittest.TestCase, SrcBaseTests):
         for s in os.listdir(f"{self.tmpdir}/restore"):
             subprocess.check_call(["sudo", "btrfs", "subvolume", "delete", f"{self.tmpdir}/restore/{s}"])
         subprocess.check_call(["sudo", "btrfs", "subvolume", "delete", f"{self.tmpdir}/source"])
-        subprocess.check_call(["sudo", "btrfs", "subvolume", "delete", self.tmpdir])
-        try:
-            os.rmdir(os.environ.get("UBACK_BTRFS_TEST_ROOT"))
-        except:
-            pass
+        shutil.rmtree(self.tmpdir)
 
     def _cleanup_restore(self, d):
         for s in os.listdir(f"{d}/restore"):
