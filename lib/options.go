@@ -10,7 +10,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/Masterminds/sprig"
+	"github.com/Masterminds/sprig/v3"
 	"github.com/gobuffalo/flect"
 	"github.com/google/shlex"
 	"github.com/sirupsen/logrus"
