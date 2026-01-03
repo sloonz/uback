@@ -1,28 +1,33 @@
 from .common import *
-from pyftpdlib.authorizers import DummyAuthorizer
-from pyftpdlib.handlers import FTPHandler
-from pyftpdlib.servers import FTPServer
-import threading
 import unittest
+import urllib.request
+import json
+import base64
 
 class DestFTPStorageTests(unittest.TestCase):
     def setUp(self):
-        self.host = "127.0.0.1"
-        self.port = 2121
-        self.user = "testuser"
-        self.password = "testpass"
-        self.ftp_root = tempfile.mkdtemp()
-
-        authorizer = DummyAuthorizer()
-        authorizer.add_user(self.user, self.password, self.ftp_root, perm="elradfmw")
-        handler = FTPHandler
-        handler.authorizer = authorizer
-        self.ftp_server = FTPServer((self.host, self.port), handler)
-        threading.Thread(target=self.ftp_server.serve_forever, daemon=True).start()
+        self.container = subprocess.check_output(["podman", "run", "--rm", "-d", "--network=host",
+            "-e", "SFTPGO_DATA_PROVIDER__CREATE_DEFAULT_ADMIN=true",
+            "-e", "SFTPGO_DEFAULT_ADMIN_USERNAME=admin",
+            "-e", "SFTPGO_DEFAULT_ADMIN_PASSWORD=admin",
+            "-e", "SFTPGO_FTPD__BINDINGS__0__PORT=2121",
+            "ghcr.io/drakkan/sftpgo:latest"]).strip()
+        for i in range(30):
+            try:
+                urllib.request.urlopen("http://localhost:8080/healthz").read()
+            except:
+                time.sleep(1)
+                pass
+        tok = json.load(urllib.request.urlopen(urllib.request.Request("http://localhost:8080/api/v2/token",
+            headers={"Authorization":"Basic "+base64.b64encode(b"admin:admin").decode()})))["access_token"]
+        urllib.request.urlopen(urllib.request.Request(
+            "http://localhost:8080/api/v2/users",
+            data=json.dumps({"status":1,"username":"test","password":"test","permissions":{"/":["*"]}}).encode(),
+            headers={"Authorization":f"Bearer {tok}", "Content-Type":"application/json"}
+        ))
 
     def tearDown(self):
-        self.ftp_server.close_all()
-        shutil.rmtree(self.ftp_root)
+        subprocess.check_call(["podman", "stop", self.container])
 
     def test_ftp_destination(self):
         with tempfile.TemporaryDirectory() as d:
@@ -31,7 +36,7 @@ class DestFTPStorageTests(unittest.TestCase):
             subprocess.check_call([uback, "key", "gen", f"{d}/backup.key", f"{d}/backup.pub"])
 
             source = f"type=tar,path={d}/source,key-file={d}/backup.pub,state-file={d}/state.json,snapshots-path={d}/snapshots,full-interval=weekly"
-            dest = f"id=test,type=ftp,@retention-policy=daily=3,key-file={d}/backup.key,url=ftp://{self.user}:{self.password}@{self.host}:{self.port},prefix=/test"
+            dest = f"id=test,type=ftp,@retention-policy=daily=3,key-file={d}/backup.key,url=ftp://test:test@localhost:2121,prefix=/test"
 
             # Full 1
             with open(f"{d}/source/a", "w+") as fd: fd.write("hello")
@@ -59,5 +64,5 @@ class DestFTPStorageTests(unittest.TestCase):
             self.assertEqual(b"world", read_file(glob.glob(f"{d}/restore/*/b")[0]))
 
             # Searching on "/" should not yield any result in the "/test/" prefix
-            parent_dest = f"id=test,type=ftp,@retention-policy=daily=3,key-file={d}/backup.key,url=ftp://{self.user}:{self.password}@{self.host}:{self.port}"
+            parent_dest = f"id=test,type=ftp,@retention-policy=daily=3,key-file={d}/backup.key,url=ftp://test:test@localhost:2121"
             self.assertEqual(0, len(subprocess.check_output([uback, "list", "backups", parent_dest]).splitlines()))
