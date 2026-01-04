@@ -37,7 +37,7 @@ clean:
 	rm -f uback ./.bin/golangci-lint
 
 .bin/golangci-lint:
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b .bin
+	GOBIN="$$(pwd)/.bin" go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 
 .bin/goreleaser:
 	GOBIN="$$(pwd)/.bin" go install github.com/goreleaser/goreleaser@latest
