@@ -46,7 +46,7 @@ func newBtrfsSource(options *uback.Options) (uback.Source, error) {
 
 	basePath := options.String["Path"]
 	if basePath == "" {
-		return nil, ErrTarPath
+		return nil, ErrBtrfsPath
 	}
 
 	var reuseSnapshots int

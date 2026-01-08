@@ -1,15 +1,17 @@
 package destinations
 
 import (
-	"github.com/sloonz/uback/lib"
-
 	"fmt"
+
+	uback "github.com/sloonz/uback/lib"
 )
 
 func New(options *uback.Options) (uback.Destination, error) {
 	switch options.String["Type"] {
 	case "btrfs":
 		return newBtrfsDestination(options)
+	case "zfs":
+		return newZfsDestination(options)
 	case "fs":
 		return newFSDestination(options)
 	case "ftp":

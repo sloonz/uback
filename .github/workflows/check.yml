@@ -19,5 +19,5 @@ jobs:
       - uses: actions/setup-go@v4
         with:
           go-version: '^1.25.5'
-      - run: sudo make USER="$USER" BTRFS_ROOT=/tmp/uback-tests setup-btrfs-root
-      - run: MARIADB_TESTS_FORCE_LOCAL=1 make BTRFS_ROOT=/tmp/uback-tests tests
+      - run: sudo make setup-btrfs-root setup-zfs-root
+      - run: MARIADB_TESTS_FORCE_LOCAL=1 make tests
