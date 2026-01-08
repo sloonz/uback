@@ -1,5 +1,15 @@
 SHELL=/bin/bash
 
+export BTRFS_ROOT ?= /tmp/uback-btrfs-tests
+export ZFS_ROOT ?= /tmp/uback-zfs-tests
+export ZFS_POOL ?= ubackpool
+
+ifdef SUDO_USER
+	TESTS_USER ?= $(SUDO_USER)
+else
+	TESTS_USER ?= $(USER)
+endif
+
 .PHONY: all
 all: uback
 
@@ -22,7 +32,17 @@ setup-btrfs-root:
 	mkfs.btrfs "$$dev" || (losetup -d "$$dev"; exit 1); \
 	mkdir "$(BTRFS_ROOT)" 2>/dev/null; \
 	mount "$$dev" "$(BTRFS_ROOT)" || (losetup -d "$$dev"; exit 1); \
-	chown "$(USER)" "$(BTRFS_ROOT)"
+	chown "$(TESTS_USER)" "$(BTRFS_ROOT)"
+
+.PHONY: setup-zfs-root
+setup-zfs-root:
+	tmp=$$(mktemp) || exit 1; \
+	truncate -s 128MiB "$$tmp" || (unlink "$$tmp"; exit 1); \
+	dev="$$(losetup --show -f "$$tmp")" || (unlink "$$tmp"; exit 1); \
+	unlink "$$tmp" || (losetup -d "$$dev"; exit 1); \
+	zpool create -f -o cachefile=none -m "$(ZFS_ROOT)" "$(ZFS_POOL)" "$$dev" || (losetup -d "$$dev"; exit 1); \
+	zfs allow "$(TESTS_USER)" create,destroy,mount,receive,send,snapshot,bookmark,send:raw,hold,release "$(ZFS_POOL)" && \
+	chown "$(TESTS_USER)" "$(ZFS_ROOT)"
 
 .PHONY: integration-tests
 integration-tests: uback

@@ -64,16 +64,25 @@ func (o *Options) GetCommand(key string, defaults []string) []string {
 func (o *Options) GetBoolean(key string, defaults bool) (bool, error) {
 	if s, ok := o.String[key]; ok {
 		ls := strings.ToLower(s)
-		if ls == "1" || ls == "true" || ls == "yes" {
+		switch ls {
+		case "1", "true", "yes":
 			return true, nil
-		} else if ls == "0" || ls == "false" || ls == "no" {
+		case "0", "false", "no":
 			return false, nil
-		} else {
+		default:
 			return false, fmt.Errorf("invalid boolean: %s", s)
 		}
 	}
 
 	return defaults, nil
+}
+
+func (o *Options) GetString(key string, defaults string) string {
+	if s, ok := o.String[key]; ok {
+		return s
+	} else {
+		return defaults
+	}
 }
 
 // Parse retention policies

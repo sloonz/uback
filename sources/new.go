@@ -1,12 +1,11 @@
 package sources
 
 import (
-	"github.com/sloonz/uback/lib"
-
 	"fmt"
 	"strings"
 
 	"github.com/google/shlex"
+	uback "github.com/sloonz/uback/lib"
 )
 
 // Create a new source from options ; you should be able to call everything on the returned interface
@@ -15,6 +14,8 @@ func New(options *uback.Options) (src uback.Source, typ string, err error) {
 	switch typ {
 	case "btrfs":
 		src, err = newBtrfsSource(options)
+	case "zfs":
+		src, err = newZfsSource(options)
 	case "tar":
 		src, err = newTarSource(options)
 	case "mariabackup":
@@ -34,6 +35,8 @@ func NewForRestoration(options *uback.Options, typ string) (uback.Source, error)
 	switch typ {
 	case "btrfs":
 		return newBtrfsSourceForRestoration(options)
+	case "zfs":
+		return newZfsSourceForRestoration(options)
 	case "tar":
 		return newTarSourceForRestoration()
 	case "mariabackup":
