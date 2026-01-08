@@ -146,17 +146,16 @@ func (s *btrfsSource) CreateBackup(baseSnapshot *uback.Snapshot) (uback.Backup, 
 
 	backup := uback.Backup{Snapshot: uback.Snapshot(snapshot), BaseSnapshot: baseSnapshot}
 	if reused {
-		err := uback.RunCommand(btrfsLog, uback.BuildCommand(s.snapshotCommand, "-r", finalSnapshotPath, tmpSnapshotPath))
-		if err != nil {
+		btrfsLog.Printf("reusing backup: %s", backup.Filename())
+		if err := os.Rename(finalSnapshotPath, tmpSnapshotPath); err != nil {
 			return uback.Backup{}, nil, err
 		}
-		btrfsLog.Printf("reusing backup: %s", backup.Filename())
 	} else {
+		btrfsLog.Printf("creating backup: %s", backup.Filename())
 		err := uback.RunCommand(btrfsLog, uback.BuildCommand(s.snapshotCommand, "-r", s.basePath, tmpSnapshotPath))
 		if err != nil {
 			return uback.Backup{}, nil, err
 		}
-		btrfsLog.Printf("creating backup: %s", backup.Filename())
 	}
 
 	args := []string{}
@@ -165,16 +164,11 @@ func (s *btrfsSource) CreateBackup(baseSnapshot *uback.Snapshot) (uback.Backup, 
 	}
 	args = append(args, tmpSnapshotPath)
 	return uback.WrapSourceCommand(backup, uback.BuildCommand(s.sendCommand, args...), func(err error) error {
-		if err != nil || s.snapshotsPath == "" {
+		if !reused && err != nil {
 			_ = uback.RunCommand(btrfsLog, uback.BuildCommand(s.deleteCommand, tmpSnapshotPath))
 			return err
 		}
-		if reused {
-			cmd := uback.BuildCommand(s.deleteCommand, tmpSnapshotPath)
-			return uback.RunCommand(btrfsLog, cmd)
-		} else {
-			return os.Rename(tmpSnapshotPath, finalSnapshotPath)
-		}
+		return os.Rename(tmpSnapshotPath, finalSnapshotPath)
 	})
 }
 

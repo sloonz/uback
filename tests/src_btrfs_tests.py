@@ -7,8 +7,8 @@ import tempfile
 class SrcBtrfsTests(unittest.TestCase, SrcBaseTests):
     def setUp(self):
         test_root = os.environ.get("BTRFS_ROOT")
-        if test_root is None:
-            raise unittest.SkipTest("BTRFS_ROOT not set")
+        if test_root is None or not os.path.exists(test_root):
+            raise unittest.SkipTest("btrfs not setup")
 
         self.tmpdir = tempfile.mkdtemp(dir=test_root)
 
