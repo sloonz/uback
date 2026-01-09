@@ -8,22 +8,22 @@ class DestBtrfsTests(unittest.TestCase, SrcBaseTests):
 
         self.tmpdir = tempfile.mkdtemp(dir=test_root)
 
-        subprocess.check_call(["btrfs", "subvolume", "create", f"{self.tmpdir}/source"])
+        check_call(["btrfs", "subvolume", "create", f"{self.tmpdir}/source"])
         ensure_dir(f"{self.tmpdir}/snapshots")
 
     def tearDown(self):
         for s in os.listdir(f"{self.tmpdir}/backups"):
-            subprocess.check_call(["sudo", "btrfs", "subvolume", "delete", f"{self.tmpdir}/backups/{s}"])
+            check_call(["sudo", "btrfs", "subvolume", "delete", f"{self.tmpdir}/backups/{s}"])
         for s in os.listdir(f"{self.tmpdir}/snapshots"):
-            subprocess.check_call(["sudo", "btrfs", "subvolume", "delete", f"{self.tmpdir}/snapshots/{s}"])
+            check_call(["sudo", "btrfs", "subvolume", "delete", f"{self.tmpdir}/snapshots/{s}"])
         for s in os.listdir(f"{self.tmpdir}/restore"):
-            subprocess.check_call(["sudo", "btrfs", "subvolume", "delete", f"{self.tmpdir}/restore/{s}"])
-        subprocess.check_call(["sudo", "btrfs", "subvolume", "delete", f"{self.tmpdir}/source"])
+            check_call(["sudo", "btrfs", "subvolume", "delete", f"{self.tmpdir}/restore/{s}"])
+        check_call(["sudo", "btrfs", "subvolume", "delete", f"{self.tmpdir}/source"])
         shutil.rmtree(self.tmpdir)
 
     def _cleanup_restore(self, d):
         for s in os.listdir(f"{d}/restore"):
-            subprocess.check_call(["sudo", "btrfs", "subvolume", "delete", f"{d}/restore/{s}"])
+            check_call(["sudo", "btrfs", "subvolume", "delete", f"{d}/restore/{s}"])
 
     def test_btrfs_dest(self):
         source = f"type=btrfs,path={self.tmpdir}/source,no-encryption=1,state-file={self.tmpdir}/state.json,snapshots-path={self.tmpdir}/snapshots,full-interval=weekly," +\

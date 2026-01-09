@@ -13,20 +13,20 @@ class SrcTarTests(unittest.TestCase, SrcBaseTests):
             ensure_dir(f"{d}/backups")
             ensure_dir(f"{d}/restore")
             ensure_dir(f"{d}/source")
-            subprocess.check_call([uback, "key", "gen", f"{d}/backup1.key", f"{d}/backup1.pub"])
-            subprocess.check_call([uback, "key", "gen", f"{d}/backup2.key", f"{d}/backup2.pub"])
+            check_call([uback, "key", "gen", f"{d}/backup1.key", f"{d}/backup1.pub"])
+            check_call([uback, "key", "gen", f"{d}/backup2.key", f"{d}/backup2.pub"])
             with open(f"{d}/backup-all.pub", "w+") as fd:
                 fd.write(fread(f"{d}/backup1.pub") + fread(f"{d}/backup2.pub"))
 
             with open(f"{d}/source/a", "w+") as fd: fd.write("av1")
-            b = subprocess.check_output([uback, "backup", source, dest]).strip().decode()
+            b = check_output([uback, "backup", source, dest]).strip().decode()
             s = b.split("-")[0]
-            subprocess.check_call([uback, "restore", "-d", f"{d}/restore", f"{dest},key-file={d}/backup1.key"])
+            check_call([uback, "restore", "-d", f"{d}/restore", f"{dest},key-file={d}/backup1.key"])
             self.assertEqual(b"av1", read_file(f"{d}/restore/{s}/a"))
             self.assertEqual(set(os.listdir(f"{d}/restore/{s}")), {"a"})
             self._cleanup_restore(d)
 
-            subprocess.check_call([uback, "restore", "-d", f"{d}/restore", f"{dest},key-file={d}/backup2.key"])
+            check_call([uback, "restore", "-d", f"{d}/restore", f"{dest},key-file={d}/backup2.key"])
             self.assertEqual(b"av1", read_file(f"{d}/restore/{s}/a"))
             self.assertEqual(set(os.listdir(f"{d}/restore/{s}")), {"a"})
             self._cleanup_restore(d)

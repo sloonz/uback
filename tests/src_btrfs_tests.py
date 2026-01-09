@@ -12,7 +12,7 @@ class SrcBtrfsTests(unittest.TestCase, SrcBaseTests):
 
         self.tmpdir = tempfile.mkdtemp(dir=test_root)
 
-        subprocess.check_call(["btrfs", "subvolume", "create", f"{self.tmpdir}/source"])
+        check_call(["btrfs", "subvolume", "create", f"{self.tmpdir}/source"])
         ensure_dir(f"{self.tmpdir}/snapshots")
 
     def tearDown(self):
@@ -20,15 +20,15 @@ class SrcBtrfsTests(unittest.TestCase, SrcBaseTests):
             return
 
         for s in os.listdir(f"{self.tmpdir}/snapshots"):
-            subprocess.check_call(["sudo", "btrfs", "subvolume", "delete", f"{self.tmpdir}/snapshots/{s}"])
+            check_call(["sudo", "btrfs", "subvolume", "delete", f"{self.tmpdir}/snapshots/{s}"])
         for s in os.listdir(f"{self.tmpdir}/restore"):
-            subprocess.check_call(["sudo", "btrfs", "subvolume", "delete", f"{self.tmpdir}/restore/{s}"])
-        subprocess.check_call(["sudo", "btrfs", "subvolume", "delete", f"{self.tmpdir}/source"])
+            check_call(["sudo", "btrfs", "subvolume", "delete", f"{self.tmpdir}/restore/{s}"])
+        check_call(["sudo", "btrfs", "subvolume", "delete", f"{self.tmpdir}/source"])
         shutil.rmtree(self.tmpdir)
 
     def _cleanup_restore(self, d):
         for s in os.listdir(f"{d}/restore"):
-            subprocess.check_call(["sudo", "btrfs", "subvolume", "delete", f"{d}/restore/{s}"])
+            check_call(["sudo", "btrfs", "subvolume", "delete", f"{d}/restore/{s}"])
 
     def test_btrfs_source(self):
         source = f"type=btrfs,path={self.tmpdir}/source,key-file={self.tmpdir}/backup.pub,state-file={self.tmpdir}/state.json,snapshots-path={self.tmpdir}/snapshots,full-interval=weekly," +\
@@ -45,17 +45,17 @@ class SrcBtrfsTests(unittest.TestCase, SrcBaseTests):
         ensure_dir(f"{self.tmpdir}/backups2")
         ensure_dir(f"{self.tmpdir}/restore")
         ensure_dir(f"{self.tmpdir}/source")
-        subprocess.check_call([uback, "key", "gen", f"{self.tmpdir}/backup.key", f"{self.tmpdir}/backup.pub"])
+        check_call([uback, "key", "gen", f"{self.tmpdir}/backup.key", f"{self.tmpdir}/backup.pub"])
         with open(f"{self.tmpdir}/source/a", "w+") as fd: fd.write("av1")
 
-        b1 = subprocess.check_output([uback, "backup", source, f"id=test1,{dest},path={self.tmpdir}/backups1"]).strip().decode()
+        b1 = check_output([uback, "backup", source, f"id=test1,{dest},path={self.tmpdir}/backups1"]).strip().decode()
         time.sleep(0.01)
-        b2 = subprocess.check_output([uback, "backup", source, f"id=test2,{dest},path={self.tmpdir}/backups2"]).strip().decode()
+        b2 = check_output([uback, "backup", source, f"id=test2,{dest},path={self.tmpdir}/backups2"]).strip().decode()
         s = b1.split("-")[0]
         self.assertEqual(b1, b2)
         self.assertEqual(set(os.listdir(f"{self.tmpdir}/snapshots")), {s})
         with open(f"{self.tmpdir}/state.json") as fd:
             self.assertEqual(json.load(fd), {"test1": s, "test2": s})
 
-        subprocess.check_call(["sudo", "btrfs", "subvolume", "delete", f"{self.tmpdir}/backups1/{s}"])
-        subprocess.check_call(["sudo", "btrfs", "subvolume", "delete", f"{self.tmpdir}/backups2/{s}"])
+        check_call(["sudo", "btrfs", "subvolume", "delete", f"{self.tmpdir}/backups1/{s}"])
+        check_call(["sudo", "btrfs", "subvolume", "delete", f"{self.tmpdir}/backups2/{s}"])

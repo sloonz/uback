@@ -8,12 +8,12 @@ class SrcTarTests(unittest.TestCase, SrcBaseTests):
             b1, b2, b3, _ = self._test_src(d, source, dest, test_ignore=True, test_delete=False)
 
             # Check that incremental backups are actually incremental
-            subprocess.run(["tar", "-C", f"{d}/restore", "-x"], input=subprocess.check_output([uback, "container", "extract", "-k", f"{d}/backup.key"], input=read_file(f"{d}/backups/{b2}.ubkp")), check=True)
+            run(["tar", "-C", f"{d}/restore", "-x"], input=check_output([uback, "container", "extract", "-k", f"{d}/backup.key"], input=read_file(f"{d}/backups/{b2}.ubkp")), check=True)
             self.assertEqual(set(os.listdir(f"{d}/restore/")), {"b"})
             self.assertEqual(b"bv1", read_file(f"{d}/restore/b"))
             shutil.rmtree(f"{d}/restore")
             os.mkdir(f"{d}/restore")
 
-            subprocess.run(["tar", "-C", f"{d}/restore", "-x"], input=subprocess.check_output([uback, "container", "extract", "-k", f"{d}/backup.key"], input=read_file(f"{d}/backups/{b3}.ubkp")), check=True)
+            run(["tar", "-C", f"{d}/restore", "-x"], input=check_output([uback, "container", "extract", "-k", f"{d}/backup.key"], input=read_file(f"{d}/backups/{b3}.ubkp")), check=True)
             self.assertEqual(set(os.listdir(f"{d}/restore/")), {"a"})
             self.assertEqual(b"av2", read_file(f"{d}/restore/a"))

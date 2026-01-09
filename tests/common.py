@@ -7,6 +7,7 @@ import subprocess
 import tempfile
 import time
 import unittest
+import sys
 
 uback = pathlib.Path(__file__).parent/".."/"uback"
 tests_path = pathlib.Path(__file__).parent/".."/"tests"
@@ -18,6 +19,18 @@ def read_file(p, mode="rb"):
 def ensure_dir(d):
     if not os.path.exists(d):
         os.mkdir(d)
+
+def check_call(cmd, *args, **kwargs):
+    print(shlex.join([str(arg) for arg in cmd]), file=sys.stderr)
+    return subprocess.check_call(cmd, *args, **kwargs)
+
+def check_output(cmd, *args, **kwargs):
+    print(shlex.join([str(arg) for arg in cmd]), file=sys.stderr)
+    return subprocess.check_output(cmd, *args, **kwargs)
+
+def run(cmd, *args, **kwargs):
+    print(shlex.join([str(arg) for arg in cmd]), file=sys.stderr)
+    return subprocess.run(cmd, *args, **kwargs)
 
 class SrcBaseTests:
     def _cleanup_restore(self, d):
@@ -35,24 +48,24 @@ class SrcBaseTests:
         ensure_dir(f"{d}/source")
         if test_ignore:
             ensure_dir(f"{d}/source/d")
-        subprocess.check_call([uback, "key", "gen", f"{d}/backup.key", f"{d}/backup.pub"])
+        check_call([uback, "key", "gen", f"{d}/backup.key", f"{d}/backup.pub"])
 
         with open(f"{d}/source/a", "w+") as fd: fd.write("av1")
         if test_ignore:
             with open(f"{d}/source/c", "w+") as fd: fd.write("c")
             with open(f"{d}/source/d/e", "w+") as fd: fd.write("e")
-        b1 = subprocess.check_output([uback, "backup", source, dest]).strip().decode()
+        b1 = check_output([uback, "backup", source, dest]).strip().decode()
         s1 = b1.split("-")[0]
-        subprocess.check_call(restore_cmd + ["-d", f"{d}/restore", dest])
+        check_call(restore_cmd + ["-d", f"{d}/restore", dest])
         self.assertEqual(b"av1", read_file(f"{d}/restore/{s1}/a"))
         self.assertEqual(set(os.listdir(f"{d}/restore/{s1}")), {"a"})
         self._cleanup_restore(d)
         time.sleep(0.01)
 
         with open(f"{d}/source/b", "w+") as fd: fd.write("bv1")
-        b2 = subprocess.check_output([uback, "backup", source, dest]).strip().decode()
+        b2 = check_output([uback, "backup", source, dest]).strip().decode()
         s2 = b2.split("-")[0]
-        subprocess.check_call(restore_cmd + ["-d", f"{d}/restore", dest])
+        check_call(restore_cmd + ["-d", f"{d}/restore", dest])
         self.assertEqual(b"av1", read_file(f"{d}/restore/{s2}/a"))
         self.assertEqual(b"bv1", read_file(f"{d}/restore/{s2}/b"))
         self.assertEqual(set(os.listdir(f"{d}/restore/{s2}")), {"a", "b"})
@@ -60,9 +73,9 @@ class SrcBaseTests:
         time.sleep(0.01)
 
         with open(f"{d}/source/a", "w+") as fd: fd.write("av2")
-        b3 = subprocess.check_output([uback, "backup", source, dest]).strip().decode()
+        b3 = check_output([uback, "backup", source, dest]).strip().decode()
         s3 = b3.split("-")[0]
-        subprocess.check_call(restore_cmd + ["-d", f"{d}/restore", dest])
+        check_call(restore_cmd + ["-d", f"{d}/restore", dest])
         self.assertEqual(b"av2", read_file(f"{d}/restore/{s3}/a"))
         self.assertEqual(b"bv1", read_file(f"{d}/restore/{s3}/b"))
         self.assertEqual(set(os.listdir(f"{d}/restore/{s3}")), {"a", "b"})
@@ -71,9 +84,9 @@ class SrcBaseTests:
 
         if test_delete:
             os.unlink(f"{d}/source/b")
-            b4 = subprocess.check_output([uback, "backup", source, dest]).strip().decode()
+            b4 = check_output([uback, "backup", source, dest]).strip().decode()
             s4 = b4.split("-")[0]
-            subprocess.check_call(restore_cmd + ["-d", f"{d}/restore", dest])
+            check_call(restore_cmd + ["-d", f"{d}/restore", dest])
             self.assertEqual(b"av2", read_file(f"{d}/restore/{s4}/a"))
             self.assertEqual(set(os.listdir(f"{d}/restore/{s4}")), {"a"})
             self._cleanup_restore(d)
@@ -88,30 +101,30 @@ class DestBaseTests:
         os.mkdir(f"{d}/backups")
         os.mkdir(f"{d}/restore")
         os.mkdir(f"{d}/source")
-        subprocess.check_call([uback, "key", "gen", f"{d}/backup.key", f"{d}/backup.pub"])
+        check_call([uback, "key", "gen", f"{d}/backup.key", f"{d}/backup.pub"])
 
         # Full 1
         with open(f"{d}/source/a", "w+") as fd: fd.write("hello")
-        self.assertEqual(0, len(subprocess.check_output([uback, "list", "backups", dest]).splitlines()))
-        subprocess.check_call([uback, "backup", "-n", "-f", source, dest])
-        self.assertEqual(1, len(subprocess.check_output([uback, "list", "backups", dest]).splitlines()))
+        self.assertEqual(0, len(check_output([uback, "list", "backups", dest]).splitlines()))
+        check_call([uback, "backup", "-n", "-f", source, dest])
+        self.assertEqual(1, len(check_output([uback, "list", "backups", dest]).splitlines()))
         time.sleep(0.01)
 
         # Full 2
-        subprocess.check_call([uback, "backup", "-n", "-f", source, dest])
-        self.assertEqual(2, len(subprocess.check_output([uback, "list", "backups", dest]).splitlines()))
+        check_call([uback, "backup", "-n", "-f", source, dest])
+        self.assertEqual(2, len(check_output([uback, "list", "backups", dest]).splitlines()))
         time.sleep(0.01)
 
         # Incremental
         with open(f"{d}/source/b", "w+") as fd: fd.write("world")
-        subprocess.check_call([uback, "backup", "-n", source, dest])
-        self.assertEqual(3, len(subprocess.check_output([uback, "list", "backups", dest]).splitlines()))
+        check_call([uback, "backup", "-n", source, dest])
+        self.assertEqual(3, len(check_output([uback, "list", "backups", dest]).splitlines()))
 
         # Prune (remove full 1)
-        subprocess.check_call([uback, "prune", "backups", dest])
-        self.assertEqual(2, len(subprocess.check_output([uback, "list", "backups", dest]).splitlines()))
+        check_call([uback, "prune", "backups", dest])
+        self.assertEqual(2, len(check_output([uback, "list", "backups", dest]).splitlines()))
 
         # Restore full 2 + incremental
-        subprocess.check_call([uback, "restore", "-d", f"{d}/restore", dest])
+        check_call([uback, "restore", "-d", f"{d}/restore", dest])
         self.assertEqual(b"hello", read_file(glob.glob(f"{d}/restore/*/a")[0]))
         self.assertEqual(b"world", read_file(glob.glob(f"{d}/restore/*/b")[0]))
