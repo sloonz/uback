@@ -79,7 +79,7 @@ Maximum time between two full backups : the the most recent full backup
 is older than the interval, then force the creation of a new full backup
 even if an incremental backup could have been created.
 
-### Key / KeyFile / NoEncrypt
+### Key / KeyFile / NoEncryption
 
 Gives the public key for backup file encryption,
 either in a file (`KeyFile`) or inline (`Key`). Only X25519
@@ -90,7 +90,7 @@ Although this is discouraged, you can also provide the private key and
 `uback` will automatically derive the public key from it, allowing you
 to use the private key in a similar way to a symmetric key.
 
-If the `NoEncrypt` option is provided and contains any non-empty value,
+If the `NoEncryption` option is provided and contains any non-empty value,
 the backup will not be encrypted.
 
 ## Common Destination Options
@@ -111,7 +111,7 @@ Orphans incremental backups (that do not eventually bottom out to an
 existing full backup) are always pruned, except in the case of the
 default policy.
 
-### Key / KeyFile / NoEncrypt
+### Key / KeyFile / NoEncryption
 
 Gives the private key for backup file decryption, either in a file
 (`KeyFile`) or inline (`Key`). Only X25519
@@ -120,5 +120,5 @@ Gives the private key for backup file decryption, either in a file
 This should option should NEVER be provided during normal backup
 operations, only during restoration of a backup.
 
-If the `NoEncrypt` option is provided and contains any non-empty value,
+If the `NoEncryption` option is provided and contains any non-empty value,
 it is assumed that the backup does not needs decryption.
