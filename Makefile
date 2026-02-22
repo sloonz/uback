@@ -60,7 +60,7 @@ clean:
 	GOBIN="$$(pwd)/.bin" go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 
 .bin/goreleaser:
-	GOBIN="$$(pwd)/.bin" go install github.com/goreleaser/goreleaser@latest
+	GOBIN="$$(pwd)/.bin" go install github.com/goreleaser/goreleaser/v2@latest
 
 release: .bin/goreleaser
 	./.bin/goreleaser release

@@ -102,7 +102,8 @@ format and keys format.
 
 ### 0.7
 
-* [ ] FTP/SFTP support
+* [X] FTP/SFTP support
+* [X] ZFS support
 
 ### 1.0
 
