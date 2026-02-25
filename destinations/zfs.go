@@ -102,7 +102,7 @@ func (d *zfsDestination) ListBackups() ([]uback.Backup, error) {
 }
 
 func (d *zfsDestination) RemoveBackup(backup uback.Backup) error {
-	return uback.RunCommand(zfsLog, uback.BuildCommand(d.destroyCommand, d.dataset+"@"+d.prefix+backup.BaseSnapshot.Name()))
+	return uback.RunCommand(zfsLog, uback.BuildCommand(d.destroyCommand, d.dataset+"@"+d.prefix+backup.Snapshot.Name()))
 }
 
 func (d *zfsDestination) SendBackup(backup uback.Backup, data io.Reader) error {

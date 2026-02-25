@@ -61,3 +61,22 @@ class DestZfsTests(unittest.TestCase):
         self.assertEqual(set(zfs_snaps("backups/child1").keys()), {f"{self.pool}/backups/child1@uback-{b1}", f"{self.pool}/backups/child1@uback-{b2}"})
         self.assertEqual(set(zfs_snaps("backups/child2").keys()), {f"{self.pool}/backups/child2@uback-{b1}"})
         self.assertEqual(set(zfs_snaps("backups/child3").keys()), {f"{self.pool}/backups/child3@uback-{b2}"})
+
+    def test_zfs_dest_remove_backup(self):
+        source = f"type=zfs,dataset={self.pool}/source,state-file={self.tmpdir}/state.json,full-interval=weekly," +\
+            f"destroy-command=sudo zfs destroy,no-encryption=1,replicate=true,use-bookmarks=false"
+        dest = f"id=zfs,type=zfs,dataset={self.pool}/backups,@retention-policy=daily=1,receive-command=sudo zfs receive," +\
+            f"destroy-command=sudo zfs destroy"
+
+        d = f"{self.tmpdir}/source"
+        with open(f"{d}/a", "w+") as fd: fd.write("v1")
+        b1 = check_output([uback, "backup", "-n", "-f", source, dest]).decode().split("-")[0]
+        time.sleep(0.01)
+        with open(f"{d}/a", "w+") as fd: fd.write("v2")
+        b2 = check_output([uback, "backup", "-n", source, dest]).decode().split("-")[0]
+
+        zfs_snaps = lambda ds: json.loads(check_output(["zfs", "list", "-j", "-t", "snapshot", "-d", "1", f"{self.pool}/{ds}"]).decode())["datasets"]
+        self.assertEqual(set(zfs_snaps("backups").keys()), {f"{self.pool}/backups@uback-{b1}", f"{self.pool}/backups@uback-{b2}"})
+
+        check_call([uback, "prune", "backups", dest])
+        self.assertEqual(set(zfs_snaps("backups").keys()), {f"{self.pool}/backups@uback-{b2}"})
