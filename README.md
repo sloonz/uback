@@ -105,6 +105,10 @@ format and keys format.
 * [X] FTP/SFTP support
 * [X] ZFS support
 
+### 0.7.1
+
+* [x] Minor bugfix
+
 ### 1.0
 
 * Community feedback 
