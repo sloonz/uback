@@ -1,5 +1,8 @@
-name: CI
-on: [push]
+name: check
+on:
+  push:
+    branches:
+      - "**"
 jobs:
   lint:
     runs-on: ubuntu-latest
