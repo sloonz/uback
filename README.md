@@ -40,6 +40,7 @@ or destination.
 * [mariabackup](doc/src-mariabackup.md): MariaDB backup system, supports
 incremental backups
 * [btrfs](doc/src-btrfs.md): btrfs snapshots
+* [zfs](doc/src-zfs.md)
 
 ## Supported Destinations
 
@@ -48,6 +49,7 @@ incremental backups
 * [object-storage](doc/dest-object-storage.md): S3-compatible object
 storage
 * [btrfs](doc/dest-btrfs.md)
+* [zfs](doc/dest-zfs.md)
 
 ## Current Status and Planned Features
 
@@ -100,12 +102,12 @@ format and keys format.
 
 * [x] Allow multiple public keys per backup
 
-### 0.7
+### 0.7 (released)
 
 * [X] FTP/SFTP support
 * [X] ZFS support
 
-### 0.7.1
+### 0.7.1 (released)
 
 * [x] Minor bugfix
 
