@@ -111,6 +111,10 @@ format and keys format.
 
 * [x] Minor bugfix
 
+### 0.7.2 (released)
+
+* [x] Paralell upload in object-storage destination
+
 ### 1.0
 
 * Community feedback 
