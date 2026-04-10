@@ -1,8 +1,6 @@
 package destinations
 
 import (
-	"github.com/sloonz/uback/lib"
-
 	"context"
 	"fmt"
 	"io"
@@ -14,6 +12,7 @@ import (
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/sirupsen/logrus"
+	uback "github.com/sloonz/uback/lib"
 )
 
 var (
@@ -23,11 +22,12 @@ var (
 )
 
 type objectStorageDestination struct {
-	options  *uback.Options
-	prefix   string
-	bucket   string
-	client   *minio.Client
-	partSize uint64
+	options    *uback.Options
+	prefix     string
+	bucket     string
+	client     *minio.Client
+	partSize   uint64
+	numThreads uint
 }
 
 func newObjectStorageDestination(options *uback.Options) (uback.Destination, error) {
@@ -84,6 +84,16 @@ func newObjectStorageDestination(options *uback.Options) (uback.Destination, err
 		}
 	}
 
+	numThreads := uint(0)
+	if options.String["NumThreads"] != "" {
+		n, err := strconv.ParseUint(options.String["NumThreads"], 10, 64)
+		if err != nil {
+			osLog.Warnf("cannot parse NumThreads option: %v", err)
+		} else {
+			numThreads = uint(n)
+		}
+	}
+
 	client, err := minio.New(endpoint, &minio.Options{
 		Creds:  credentials.NewStaticV4(accessKeyID, secretAccessKey, ""),
 		Secure: secure,
@@ -93,7 +103,14 @@ func newObjectStorageDestination(options *uback.Options) (uback.Destination, err
 		return nil, fmt.Errorf("failed to create object storage instance: %v", err)
 	}
 
-	return &objectStorageDestination{options: options, client: client, prefix: prefix, bucket: bucket, partSize: partSize}, nil
+	return &objectStorageDestination{
+		options:    options,
+		client:     client,
+		prefix:     prefix,
+		bucket:     bucket,
+		partSize:   partSize,
+		numThreads: numThreads,
+	}, nil
 }
 
 func (d *objectStorageDestination) ListBackups() ([]uback.Backup, error) {
@@ -140,7 +157,15 @@ func (d *objectStorageDestination) RemoveBackup(backup uback.Backup) error {
 
 func (d *objectStorageDestination) SendBackup(backup uback.Backup, data io.Reader) error {
 	osLog.Printf("writing backup to %s", d.prefix+backup.Filename())
-	_, err := d.client.PutObject(context.Background(), d.bucket, d.prefix+backup.Filename(), data, -1, minio.PutObjectOptions{PartSize: d.partSize})
+	putOpts := minio.PutObjectOptions{
+		PartSize: d.partSize,
+	}
+	if d.numThreads > 0 {
+		putOpts.NumThreads = d.numThreads
+		putOpts.ConcurrentStreamParts = true
+	}
+
+	_, err := d.client.PutObject(context.Background(), d.bucket, d.prefix+backup.Filename(), data, -1, putOpts)
 	if err != nil {
 		d.client.RemoveObject(context.Background(), d.bucket, d.prefix+backup.Filename(), minio.RemoveObjectOptions{}) //nolint:errcheck
 		return fmt.Errorf("failed to write backup to object storage: %v", err)

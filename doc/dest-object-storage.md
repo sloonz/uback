@@ -77,8 +77,20 @@ your PartSize setting directly determines the maximum backup size possible
 (PartSize × 10,000).
 
 * Memory usage: A buffer equal to PartSize is allocated in memory. For
-example, the default 512 MiB setting requires 512 MiB of RAM.
+example, the default 512 MiB setting requires 512 MiB of RAM. If
+`NumThreads` is greater than 0, that many such buffers are used.
 
 * Performance tradeoff: Smaller parts mean more round-trips to the server,
 potentially reducing performance for large backups. Larger parts mean
 fewer round-trips but higher memory usage.
+
+### NumThreads
+
+Optional, defaults to 0.
+
+Enable concurrent multipart uploads for streaming backups and set the
+number of upload threads to use. A value of 0 disables concurrent
+uploads.
+
+Note that memory usage increases to roughly `PartSize × NumThreads`,
+because one buffer is allocated per upload thread.
