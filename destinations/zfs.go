@@ -48,7 +48,7 @@ func newZfsDestination(options *uback.Options) (uback.Destination, error) {
 	}
 
 	sendCommand := options.GetCommand("SendCommand", []string{"zfs", "send"})
-	destroyCommand := options.GetCommand("DestroyCommand", []string{"zfs", "detroy"})
+	destroyCommand := options.GetCommand("DestroyCommand", []string{"zfs", "destroy"})
 
 	if replicate {
 		sendCommand = append(sendCommand, "-R")
