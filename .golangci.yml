@@ -1,26 +1,50 @@
+version: "2"
 linters:
   enable:
-    - govet
-    - gofmt
     - gosec
     - revive
-issues:
-  exclude-files:
-    - "secretstream/secretstream.go" 
-    - "secretstream/secretstream_test.go" 
-linters-settings:
-  errcheck:
-    exclude-functions:
-      - (*io.PipeReader).CloseWithError
-      - (*io.PipeWriter).CloseWithError
-      - encoding/binary.Write(*bytes.Buffer)
-      - (*github.com/spf13/cobra.Command).Help
-      - (*os.Process).Kill
-  gosec:
-    excludes:
-      - G204
-      - G306
-  revive:
-    rules:
-      - name: indent-error-flow
-        disabled: true
+  settings:
+    staticcheck:
+      # Preserve the staticcheck and gosimple coverage from golangci-lint v1.
+      checks:
+        - "SA*"
+        - "S1*"
+    errcheck:
+      exclude-functions:
+        - (*io.PipeReader).CloseWithError
+        - (*io.PipeWriter).CloseWithError
+        - encoding/binary.Write(*bytes.Buffer)
+        - (*github.com/spf13/cobra.Command).Help
+        - (*os.Process).Kill
+    gosec:
+      excludes:
+        - G204
+        - G306
+    revive:
+      rules:
+        - name: indent-error-flow
+          disabled: true
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - secretstream/secretstream.go
+      - secretstream/secretstream_test.go
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gofmt
+  exclusions:
+    generated: lax
+    paths:
+      - secretstream/secretstream.go
+      - secretstream/secretstream_test.go
+      - third_party$
+      - builtin$
+      - examples$

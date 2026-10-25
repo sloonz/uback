@@ -1,3 +1,5 @@
+version: 2
+
 project_name: uback
 
 builds:
@@ -15,7 +17,7 @@ builds:
 archives:
   - id: uback
     wrap_in_directory: true
-    builds:
+    ids:
       - uback
     files:
       - LICENSE

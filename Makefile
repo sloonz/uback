@@ -56,11 +56,11 @@ lint: .bin/golangci-lint
 clean:
 	rm -f uback ./.bin/golangci-lint
 
-.bin/golangci-lint:
-	GOBIN="$$(pwd)/.bin" go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+.bin/golangci-lint: Makefile
+	GOBIN="$$(pwd)/.bin" go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.15.0
 
-.bin/goreleaser:
-	GOBIN="$$(pwd)/.bin" go install github.com/goreleaser/goreleaser/v2@latest
+.bin/goreleaser: Makefile
+	GOBIN="$$(pwd)/.bin" go install github.com/goreleaser/goreleaser/v2@v2.19.0
 
 release: .bin/goreleaser
 	./.bin/goreleaser release
