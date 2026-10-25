@@ -14,7 +14,7 @@ endif
 all: uback
 
 uback: go.mod go.sum Makefile **/*.go *.go sources/scripts/*.sh
-	go build -ldflags="-X github.com/sloonz/uback/cmd.commit=$$(git rev-parse --short HEAD) -X github.com/sloonz/uback/cmd.buildDate=$$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+	CGO_ENABLED=0 go build -ldflags="-X github.com/sloonz/uback/cmd.commit=$$(git rev-parse --short HEAD) -X github.com/sloonz/uback/cmd.buildDate=$$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 .PHONY: tests
 tests: unit-tests integration-tests

@@ -113,7 +113,15 @@ format and keys format.
 
 ### 0.7.2 (released)
 
-* [x] Paralell upload in object-storage destination
+* [x] Parallel upload in object-storage destination
+
+### 0.7.3 (released)
+
+* [x] Minor bugfix
+
+### 0.7.4 (released)
+
+* [x] Build without cgo to support systems without glibc like alpine
 
 ### 1.0
 
