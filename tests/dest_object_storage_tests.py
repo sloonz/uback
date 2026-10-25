@@ -2,16 +2,22 @@ from .common import *
 
 class DestObjectStorageTests(unittest.TestCase):
     def setUp(self):
-        self.container = check_output(["podman", "run", "--rm", "-dp", "9000:9000", "docker.io/minio/minio", "server", "/data"]).strip().decode()
+        self.container = check_output([
+            "podman", "run", "--rm", "-dp", "7070:7070",
+            "-e", "ROOT_ACCESS_KEY=testuser", "-e", "ROOT_SECRET_KEY=testsecret",
+            "docker.io/versity/versitygw:latest", "--port", ":7070", "posix", "/tmp/vgw",
+        ]).strip().decode()
+        self.addCleanup(check_call, ["podman", "stop", self.container])
         for i in range(300):
-            if run(["podman", "exec", self.container, "sh", "-c", "mc alias set minio http://localhost:9000 minioadmin minioadmin && mc mb minio/testbucket"]).returncode == 0:
+            if run([
+                "podman", "exec", self.container, "versitygw", "admin",
+                "-a", "testuser", "-s", "testsecret", "-er", "http://127.0.0.1:7070",
+                "create-bucket", "--bucket", "testbucket", "--owner", "testuser",
+            ]).returncode == 0:
                 break
             time.sleep(0.1)
         else:
-            raise Exception("could not initialize minio")
-
-    def tearDown(self):
-        check_call(["podman", "stop", self.container])
+            raise Exception("could not initialize versitygw")
 
     def test_os_destination(self):
         with tempfile.TemporaryDirectory() as d:
@@ -20,7 +26,7 @@ class DestObjectStorageTests(unittest.TestCase):
             check_call([uback, "key", "gen", f"{d}/backup.key", f"{d}/backup.pub"])
 
             source = f"type=tar,path={d}/source,key-file={d}/backup.pub,state-file={d}/state.json,snapshots-path={d}/snapshots,full-interval=weekly"
-            dest = f"id=test,type=object-storage,@retention-policy=daily=3,key-file={d}/backup.key,url=http://minioadmin:minioadmin@localhost:9000/testbucket,prefix=/test"
+            dest = f"id=test,type=object-storage,@retention-policy=daily=3,key-file={d}/backup.key,url=http://testuser:testsecret@localhost:7070/testbucket,prefix=/test"
 
             # Full 1
             with open(f"{d}/source/a", "w+") as fd: fd.write("hello")
@@ -48,5 +54,5 @@ class DestObjectStorageTests(unittest.TestCase):
             self.assertEqual(b"world", read_file(glob.glob(f"{d}/restore/*/b")[0]))
 
             # Searching on "/" should not yield any result in the "/test/" prefix
-            parent_dest = f"id=test,type=object-storage,@retention-policy=daily=3,key-file={d}/backup.key,url=http://minioadmin:minioadmin@localhost:9000/testbucket"
+            parent_dest = f"id=test,type=object-storage,@retention-policy=daily=3,key-file={d}/backup.key,url=http://testuser:testsecret@localhost:7070/testbucket"
             self.assertEqual(0, len(check_output([uback, "list", "backups", parent_dest]).splitlines()))
